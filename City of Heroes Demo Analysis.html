@@ -13100,6 +13100,23 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Brief-Patch-Notes">Brief Patch Notes<a class="anchor-link" href="#Brief-Patch-Notes">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<ul>
+<li>8/4/20 - revamped entity detection (which was the oldest, laziest part of the code) so that the demo should work fairly well for participant and spectator demos alike. This means the exclNames parameter is likely obsolete. Also revamped team assignment based on something suggested in xhiggy and mjb's code - thank you! Finally, I added customStart as an optional parameter, with similar functionality to customEnd.</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Why-use-this?">Why use this?<a class="anchor-link" href="#Why-use-this?">&#182;</a></h3>
 </div>
 </div>
@@ -13128,11 +13145,8 @@ div#notebook {
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Mostly because it's incomplete. I've built it to handle situations I've seen while recording <strong>first person</strong> demos (i.e. as one of the participants in the 8v8 match) over the past few weeks, but during that time I:</p>
 <ul>
-<li>Never ran into someone using the Dark Blast set</li>
-<li>Never ran into someone using Pain instead of Empathy</li>
-<li>Did not encounter many of the weird entity names that could screw up entity detection</li>
+<li>Never ran into someone using the Dark Blast set (or many other sets for which I haven't grabbed .FX yet)</li>
 <li>Only rarely attempted to use this for anything less than 8v8s (I have parameters to make this work, but it's only been lightly tested)</li>
-<li>Only once attempted to use this for Spectator mode demos (though it should work if whoever is running the code fills in entities properly)</li>
 <li>etc.</li>
 </ul>
 <p>...so you could easily need to add to it. Alternatively, if this is hosted on github, other users or I could periodically add these features when they arise and update the code.</p>
@@ -13173,8 +13187,8 @@ div#notebook {
 <li>Play (or spectate) the match</li>
 <li>Optionally, at the buzzer at the end of the match, type or hit a macro for /demostop . Otherwise the demo will stop when you leave the zone, but it may pick up kills that occur after the buzzer</li>
 <li>Open R or RStudio</li>
-<li>If you are in R, you will probably want to open a new script (File -&gt; New Script) so that you can copy some of the code below and then run highlighted portions (highlight -&gt; Ctrl+R), where the output will appear in the console (stretch the console window as needed). If you are in RStudio, which requires you to also have R installed, then you should already have a script and console window. Some versions of RStudio use Ctrl+Enter to run highlighted parts instead of Ctrl+R.</li>
-<li><strong>If you viewed the match as a spectator, then you will want to set checkEntities = TRUE and modify the team assignments before proceeding. You may also need to temporarily modify the exclNames parameter to remove your own character as an entity. This code was written primarily with first-person demos in mind, recorded by a match participant rather than a spectator.</strong></li>
+<li><strong>If you are in R</strong>, you will probably want to open a new script (File -&gt; New Script) so that you can copy some of the code below and then run highlighted portions (highlight -&gt; Ctrl+R), where the output will appear in the console (stretch the console window as needed).</li>
+<li><strong>If you are in RStudio</strong>, which requires you to also have R installed, then you should already have a script and console window. Some versions of RStudio use Ctrl+Enter to run highlighted parts instead of Ctrl+R.</li>
 <li>Run a few bits of code in R / RStudio (minimalist example below) and inspect the output:</li>
 </ul>
 
@@ -13267,14 +13281,14 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="A-quick-note-on-Entities---the-most-likely-obstacle-to-the-code-running-smoothly">A quick note on Entities - the most likely obstacle to the code running smoothly<a class="anchor-link" href="#A-quick-note-on-Entities---the-most-likely-obstacle-to-the-code-running-smoothly">&#182;</a></h3>
+<h3 id="A-quick-note-on-Entities,-which-you-will-be-prompted-to-check-if-you-leave-checkEntities-=-TRUE">A quick note on Entities, which you will be prompted to check if you leave checkEntities = TRUE<a class="anchor-link" href="#A-quick-note-on-Entities,-which-you-will-be-prompted-to-check-if-you-leave-checkEntities-=-TRUE">&#182;</a></h3>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>If you run the code exactly as shown above, you'll be prompted to check entities. Demos identify entities as players, pets, and so forth. Here is an example from a recent match, and you can see that it makes its best guess about team membership, which should usually work for first-person demos <strong>but requires some modification for spectator demos</strong> (more on that in a bit):</p>
+<p>If you run the code exactly as shown above, you'll be prompted to check entities. Demos identify entities as players, pets, and so forth. Here is an example from a recent match, and you can see that it makes its best guess about team membership, which should usually be correct:</p>
 
 </div>
 </div>
@@ -14149,16 +14163,19 @@ div#notebook {
                                     <span class="s">&quot;Power Push&quot;</span><span class="p">,</span><span class="s">&quot;Energy Snipe&quot;</span><span class="p">,</span><span class="s">&quot;Will Domination&quot;</span><span class="p">,</span><span class="s">&quot;Telekinetic Blast&quot;</span><span class="p">,</span><span class="s">&quot;Subdue&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">),</span>
                       <span class="n">healset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Absorb Pain&quot;</span><span class="p">,</span><span class="s">&quot;Heal Other&quot;</span><span class="p">,</span><span class="s">&quot;Aid Other&quot;</span><span class="p">,</span><span class="s">&quot;Spirit Ward&quot;</span><span class="p">,</span><span class="s">&quot;Insulating Circuit&quot;</span><span class="p">,</span>
-                                  <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">),</span> <span class="c1">## add Pain Stuff?</span>
+                                  <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">,</span> <span class="s">&quot;Soothe&quot;</span><span class="p">,</span> <span class="s">&quot;Share Pain&quot;</span><span class="p">),</span>
                       <span class="n">evadeset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Phase Shift&quot;</span><span class="p">,</span><span class="s">&quot;Hibernate&quot;</span><span class="p">,</span><span class="s">&quot;Jaunt&quot;</span><span class="p">,</span><span class="s">&quot;Raptor or Fly&quot;</span><span class="p">),</span> <span class="c1">## add Dim Shift?</span>
                       <span class="n">otherset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Crey Pistol&quot;</span><span class="p">,</span><span class="s">&quot;Net Arrow&quot;</span><span class="p">,</span><span class="s">&quot;Weaken&quot;</span><span class="p">,</span><span class="s">&quot;Confuse or Deceive&quot;</span><span class="p">,</span><span class="s">&quot;Regrowth&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;Shock&quot;</span><span class="p">,</span><span class="s">&quot;Empowering Circuit&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;Energizing Circuit&quot;</span><span class="p">,</span><span class="s">&quot;Amp Up&quot;</span><span class="p">,</span><span class="s">&quot;Healing Aura&quot;</span><span class="p">,</span><span class="s">&quot;Fort or AB&quot;</span><span class="p">,</span><span class="s">&quot;Clear Mind&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;Speed Boost&quot;</span><span class="p">,</span><span class="s">&quot;Increase Density&quot;</span><span class="p">,</span><span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span><span class="s">&quot;Transference&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;Shock&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span><span class="s">&quot;Transference&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Siphon Speed&quot;</span><span class="p">),</span>
+                      <span class="n">buffset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Empowering Circuit&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;Energizing Circuit&quot;</span><span class="p">,</span><span class="s">&quot;Amp Up&quot;</span><span class="p">,</span><span class="s">&quot;Healing Aura&quot;</span><span class="p">,</span><span class="s">&quot;Fort or AB&quot;</span><span class="p">,</span><span class="s">&quot;Clear Mind&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;Speed Boost&quot;</span><span class="p">,</span><span class="s">&quot;Increase Density&quot;</span><span class="p">,</span><span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span>
+                                  <span class="s">&quot;Absorb Pain&quot;</span><span class="p">,</span><span class="s">&quot;Heal Other&quot;</span><span class="p">,</span><span class="s">&quot;Aid Other&quot;</span><span class="p">,</span><span class="s">&quot;Spirit Ward&quot;</span><span class="p">,</span><span class="s">&quot;Insulating Circuit&quot;</span><span class="p">,</span>
+                                  <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">),</span>
                       <span class="n">spikeWindow</span><span class="o">=</span><span class="m">3.5</span><span class="p">,</span> <span class="n">min_attacks_per_spike</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">max_time_per_spike_sec</span><span class="o">=</span><span class="m">11</span><span class="p">,</span> <span class="n">hitSupportCredit</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span>
                       <span class="n">healWindow</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">preEvadeWindow</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="m">1</span><span class="p">),</span>
-                      <span class="n">customEnd</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span> <span class="n">checkEntities</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> <span class="n">expectedPlayers</span><span class="o">=</span><span class="m">16</span><span class="p">,</span>
+                      <span class="n">customStart</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span><span class="n">customEnd</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span> <span class="n">checkEntities</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> <span class="n">expectedPlayers</span><span class="o">=</span><span class="m">16</span><span class="p">,</span>
                       <span class="n">emotePolice</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span>
                       <span class="n">textset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;FIREBALL.FX&quot;</span><span class="p">,</span> <span class="s">&quot;SOOT.FX&quot;</span><span class="p">,</span> <span class="s">&quot;INFERNOBOLT.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;FIREBLASTAIM.FX&quot;</span><span class="p">,</span> <span class="s">&quot;FIREBOLT.FX&quot;</span><span class="p">,</span> <span class="s">&quot;FLARES.FX&quot;</span><span class="p">,</span><span class="s">&quot;XXLARGEFIREBALL.FX&quot;</span><span class="p">,</span> <span class="s">&quot;INFERNO.FX&quot;</span><span class="p">,</span>
@@ -14193,7 +14210,8 @@ div#notebook {
                                    <span class="s">&quot;KINSIPHONSPEED.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINSPEEDBOOST.FX&quot;</span><span class="p">,</span><span class="s">&quot;KININCREASEDENSITY.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;KININERTIALREDUCTIONS.FX&quot;</span><span class="p">,</span><span class="s">&quot;WILLDOMINATION.FX&quot;</span><span class="p">,</span><span class="s">&quot;TELEKINETICBLAST.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;SUBDUEPSIONICBLAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PSIBLAST_SLOWERCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PSIONICLANCEBLASTQUICK.FX&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;PSIONICBLAST_SLOWCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFUSION.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFERENCE.FX&quot;</span><span class="p">),</span>
+                                   <span class="s">&quot;PSIONICBLAST_SLOWCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFUSION.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFERENCE.FX&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;SOOTH_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;SHAREPAIN_ATTACK.FX&quot;</span><span class="p">),</span>
                       
                       <span class="n">powerset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span> <span class="s">&quot;Char&quot;</span><span class="p">,</span> <span class="s">&quot;Blazing Bolt&quot;</span><span class="p">,</span> <span class="s">&quot;Aim&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Blast&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Flares&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Ball&quot;</span><span class="p">,</span> <span class="s">&quot;Inferno&quot;</span><span class="p">,</span> <span class="s">&quot;Super Jump&quot;</span><span class="p">,</span> <span class="s">&quot;Geas&quot;</span><span class="p">,</span> <span class="s">&quot;Burst of Speed&quot;</span><span class="p">,</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span>
@@ -14216,7 +14234,7 @@ div#notebook {
                                     <span class="s">&quot;Net Arrow&quot;</span><span class="p">,</span><span class="s">&quot;Siphon Speed&quot;</span><span class="p">,</span><span class="s">&quot;Speed Boost&quot;</span><span class="p">,</span><span class="s">&quot;Increase Density&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span><span class="s">&quot;Will Domination&quot;</span><span class="p">,</span><span class="s">&quot;Telekinetic Blast&quot;</span><span class="p">,</span><span class="s">&quot;Subdue&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span>
-                                    <span class="s">&quot;Transference&quot;</span><span class="p">))</span>
+                                    <span class="s">&quot;Transference&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">))</span>
 </pre></div>
 
     </div>
@@ -14230,17 +14248,19 @@ div#notebook {
 <ul>
 <li><strong>x</strong> : demo name in quotes, without the .cohdemo extension, e.g. "d1".</li>
 <li><strong>keySkills</strong> : a set of abilities to track. By default (i.e. when NULL), this will be comprised of the union of attackset, healset, evadeset, and otherset (below).</li>
-<li><strong>exclNames</strong> : a set of entity names to exclude as non-players. Basically, the demo assumes anyone with an entity ID under 100 will be a player (since players load first), but sometimes other entities get spawned under 100 as well. I continually add to this list if checkEntities discovers more non-player names.</li>
+<li><strong>exclNames</strong> : a set of entity names to exclude as non-players. <em>This is no longer being used as of 8/4/20.</em> It will remain in the code until more testing has confirmed that it is no longer needed.</li>
 <li><strong>attackset</strong> : a set of ability names to count as attacks (i.e. counted as an offensive part of spikes). These ability names are defined later in powerset. Note that spikes must be aimed <em>at a particular player</em>, so randomly throwing abilities at other players, off-spike, will not count as being on spike.</li>
 <li><strong>healset</strong> : a set of ability names to count as heals in heal tracking.</li>
 <li><strong>evadeset</strong> : a set of ability names to count as evasive maneuvers in evasion tracking.</li>
 <li><strong>otherset</strong> : a set of other ability names to track usage but not count as part of spikes / evasion / healing.</li>
-<li><strong>spikeWindow</strong> : time <em>in seconds</em> before a series of attacks aimed at a particular player is no longer counted as part of the same spike. Default 3.5. What this means is that if Target X goes 3.5 seconds without <em>anyone</em> on the other team firing an attack at them, then the spike is over. If even one player continues firing at Target X within 3.5 seconds of anyone's previous attack, then the spike continues.</li>
+<li><strong>buffset</strong> : a set of ability names that includes common buffs and heals (ally-aimed powers) <em>which is used for team assignment</em>. These powers may overlap with other sets (healset, most commonly), but any powers that <em>only</em> appear in buffset will be tracked but not counted as part of spikes / evasion / healing.</li>
+<li><strong>spikeWindow</strong> : time <em>in seconds</em> before a series of attacks aimed at a particular player is no longer counted as part of the same spike. Default 3.5. What this means is that if Target X goes 3.5 seconds without <em>anyone</em> on the other team firing an attack at them, then the spike is over. If even one player continues firing at Target X within 3.5 seconds of anyone's previous attack, then the spike continues, up to a limit of max_time_per_spike_sec (below).</li>
 <li><strong>min_attacks_per_spike</strong> : minimum number of attacks that must be fired at a player in order for it to count as a spike attempt. Default 2. There are exceptions to this (see below).</li>
 <li><strong>max_time_per_spike_sec</strong> : maximum time <em>in seconds</em> that a spike can last. Default 11. If someone keeps extending the spikeWindow by continuously hitting a target, then a new spike will begin after 11 seconds. In practice, this has not happened often, given that most teams are not currently roguing, but roguing could mess with this system. This is intended to catch "re-call" spikes as being separate, which it does fairly well.</li>
 <li><strong>hitSupportCredit</strong> : logical indicator for whether hitting a "support" during a spike window still counts as being "on spike" even if that support is not the target. Default TRUE. Why? Sometimes forcing evasion or mezzing a support during a spike can contribute to the spike's success. Currently, "supports" are <strong>automatically</strong> defined as the <strong>two</strong> players on each team who use the fewest powers from attackset. This is done deeper in the code but could be reworked to feed in the support names via parameters.</li>
 <li><strong>healWindow</strong> : in order to be counted as being in response to a spike, heals must be attempted between the spike's start time (first attack) and the spike's end time (when the last attack of the spike is <em>fired</em>), plus healWindow seconds. Default 2.</li>
 <li><strong>preEvadeWindow</strong> : a window of time that allows spikes to be counted (and specifically, counted as evaded) <em>even if they do not meet the min_attacks_per_spike requirement</em>. Default is c(-2, 1) which means that if a player takes an evasive action like Jaunt anywhere from 2 seconds before, to 1 second after, the first attack in a spike... the spike will be counted regardless of min_attacks_per_spike settings. A few notes: 1) there is probably no good way to count pre-evasions that result in 0 attacks fired, and 2) in order to count as an evasion, there's also a <strong>hard-coded</strong> maximum limit of 2 seconds after the last attack in the spike is fired (similar to healWindow above, but it's hard-coded, rather than a parameter). This will occasionally pick up an extra spike that isn't really a spike. However, <em>there is no surefire way to give credit to evasions involving only 1-2 attacks without at least sometimes counting an extra spike,</em> so it's up to the user. Consistency across matches is more important than worrying about which error to favor.</li>
+<li><strong>customStart</strong> : time <em>in seconds</em> after the start of demo recording when data should actually be tracked. Default NULL, which means that the demo tracks everything from the moment recording begins. If you know you started recording at exactly 0:15 until match begins, and you don't want to track any pre-match buffs, you could set this to 15.</li>
 <li><strong>customEnd</strong> : time <em>in seconds</em> after which all demo information is ignored and the match is considered over. Default NULL, which means that the demo will either track data until a teammate (team 0) leaves the game after 10 minutes of recording, or until the demo ends if no teammate is seen leaving the match. However, if you know the match lasted for exactly 615 seconds of demo recording - e.g. because you started recording at exactly 0:15 until match begins - then you could supply 615 as the value.</li>
 <li><strong>checkEntities</strong> : logical indicator for whether users should be prompted to confirm the players / teams are correct. If they are not, then the user is given the option to identify players and teams directly. Default TRUE. Can be turned to FALSE for demos that have been successfully parsed before or where entity mismatches are unlikely.</li>
 <li><strong>expectedPlayers</strong> : number of players expected in the match. Default 16, corresponding to 8v8. If the number of tracked entities is not equal to this value after checking entities, then the function will return an error code.</li>
@@ -14249,7 +14269,6 @@ div#notebook {
 </ul>
 <p><strong>The most likely parameters a casual user would need to modify are:</strong></p>
 <ul>
-<li>exclNames to add to the list of entities to exclude.</li>
 <li>textset and powerset to add powers, and then add them to tracking them by adding to attackset, healset, evadeset, otherset. Remember that attackset is used for finding spikes, so I tend not to include off-target harassment powers like Siphon Speed and Weaken as "attacks." I put those powers in otherset instead.</li>
 <li>expectedPlayers if using this for something other than 8v8s.</li>
 </ul>
@@ -14272,8 +14291,7 @@ div#notebook {
 </ul>
 <h4 id="Technical-Notes,-Settings,-and-Known-Issues">Technical Notes, Settings, and Known Issues<a class="anchor-link" href="#Technical-Notes,-Settings,-and-Known-Issues">&#182;</a></h4><ul>
 <li>I detect player deaths in two different ways, as seen in the code, and then try to de-duplicate between them. I do this because sometimes one method catches it while the other doesn't.</li>
-<li>Player entities assume that players will have entity numbers &lt; 100 (generally true since they load first).</li>
-<li>Default team assignment assumes that the first 8 (or expectedPlayers/2) players seen are on Team 0, and the second 8 seen are on Team 1. This is true for first-person demos but not necessarily true for spectator demos.</li>
+<li>Default team assignment takes buffset powers, looks at who was using them on other players, and determines common pairings of buffs to be an indication of teammates (while excluding anyone who buffed someone else only once or twice since theoretically buffing someone while confused is possible). If this process fails, then team assignment will revert to the old definition, which put the first expectedPlayers/2 players on Team 0 and the remainder on Team 1... that assignment should still work for most first-person demos but not for spectator demos.</li>
 <li>Spirit Shark Jaws has no .FX, but it has a MOV associated with it, so I created my own fake "FX" coding based on that usage. This means SSJ does not have a target (unless I use "hit" animations - more on that in a moment).</li>
 <li>Strangler is basically a ghost, because it has no .FX and no MOV. As a result, Strangler is only detected when it causes a "hit" animation from the target (which still gives information about who fired it and who the target was). So its detection is different from all other powers.</li>
 <li>Blind had to be dealt with in a special way because the <em>targets</em> of the Blind also "cast" Blind on themselves. So basically I remove opposing team instances of Blind if they occur right after an attacker uses Blind. This was implemented before I started using targeting data, but it works extremely well.</li>
@@ -14328,6 +14346,7 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>It would be pretty easy to use R's base graphics, or the ggplot2 package (install.packages("ggplot2") to install the first time only, then library(ggplot2) to read it into memory each time you load R), to create line graphs of spikes over time, kills over time, rolling success rate over time, number of players on spike over time, etc. I haven't done any of that yet, but it would be pretty easy if you pick apart the spikeSummary and spikeDetails portions of the output.</p>
+<p>I might eventually add an option to automatically start the match at a logical point (e.g. when someone moves from spawn or jumps) and end it 600 seconds later.</p>
 <p>There are plenty of other cool analytical things that could be done or added, though I will say that I tend to prefer the metrics this code provides - average times, average counts - over black and white classification attempts, e.g. "good spike vs. bad spike." Setting aside the fact that that classification depends not just on firing but also on how the damage lands (including the debuff), it's also the age-old classification vs. regression debate. Getting averages across a match's spikes, or a team's set of scrimmages, and getting a feel for the difference between those is often more useful than trying to fit everything into a good or bad bin. But any of those approaches are possible with small modifications to this code.</p>
 
 </div>

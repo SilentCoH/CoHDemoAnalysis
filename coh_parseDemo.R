@@ -12,6 +12,8 @@
 ##     but the target might not get credit for an evasion if their response to the latter portion of the spike is simply to continue
 ##     moving / breaking LOS rather than using jaunt/fly/phase/hibernate
 ## - no way to track green inspiration usage which is an important part of defense (would be floatdmg based i.e. not reliable. Not fixable)
+## - no guarantee that other powers (not yet added to my lists) don't use MOV Wall 0 which is what I use to detect SSJ. For example,
+##     Block of Ice from Ice Control might use the same thing, so care would need to be taken to deduplicate MOV Wall 0's from Block of Ice.
 
 ## Also, a major to do item is that graphics could be generated in ggplot2, particularly for things like count of spikes over time,
 ##     match score over time, number of players on spike over time, etc. I've been too lazy to create these, but it wouldn't be difficult.
@@ -36,16 +38,19 @@ parseDemo <- function(x,
                                     "Power Push","Energy Snipe","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
-                                  "Rejuvenating Circuit"), ## add Pain Stuff?
+                                  "Rejuvenating Circuit", "Soothe", "Share Pain"),
                       evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly"), ## add Dim Shift?
                       otherset = c("Crey Pistol","Net Arrow","Weaken","Confuse or Deceive","Regrowth",
-                                   "Shock","Empowering Circuit",
-                                   "Energizing Circuit","Amp Up","Healing Aura","Fort or AB","Clear Mind",
-                                   "Speed Boost","Increase Density","Inertial Reduction","Transfusion","Transference",
+                                   "Shock","Transfusion","Transference",
                                    "Siphon Speed"),
+                      buffset = c("Empowering Circuit",
+                                   "Energizing Circuit","Amp Up","Healing Aura","Fort or AB","Clear Mind",
+                                   "Speed Boost","Increase Density","Inertial Reduction",
+                                  "Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
+                                  "Rejuvenating Circuit","Soothe","Share Pain"),
                       spikeWindow=3.5, min_attacks_per_spike=2, max_time_per_spike_sec=11, hitSupportCredit=TRUE,
                       healWindow=2, preEvadeWindow=c(-2,1),
-                      customEnd=NULL, checkEntities=TRUE, expectedPlayers=16,
+                      customStart=NULL,customEnd=NULL, checkEntities=TRUE, expectedPlayers=16,
                       emotePolice=TRUE,
                       textset = c("FIREBALL.FX", "SOOT.FX", "INFERNOBOLT.FX",
                                    "FIREBLASTAIM.FX", "FIREBOLT.FX", "FLARES.FX","XXLARGEFIREBALL.FX", "INFERNO.FX",
@@ -80,7 +85,8 @@ parseDemo <- function(x,
                                    "KINSIPHONSPEED.FX","KINSPEEDBOOST.FX","KININCREASEDENSITY.FX",
                                    "KININERTIALREDUCTIONS.FX","WILLDOMINATION.FX","TELEKINETICBLAST.FX",
                                    "SUBDUEPSIONICBLAST.FX","PSIBLAST_SLOWERCAST.FX","PSIONICLANCEBLASTQUICK.FX",
-                                   "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX"),
+                                   "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX",
+                                   "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Super Jump", "Geas", "Burst of Speed","Blaze",
@@ -103,14 +109,14 @@ parseDemo <- function(x,
                                     "Net Arrow","Siphon Speed","Speed Boost","Increase Density",
                                     "Inertial Reduction","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Transfusion",
-                                    "Transference")){
+                                    "Transference","Soothe","Share Pain")){
   
   ## General note: a few times in this code I get lazy by assuming entities will be single/double digits
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
   ## matches, runs the risk of having players with 4+ digit entities which might break some of the code.
   
   if (is.null(keySkills)){
-    keySkills <- unique(c(attackset,healset,evadeset,otherset))
+    keySkills <- unique(c(attackset,healset,evadeset,otherset,buffset))
   }
   
   mydataDF <- read.delim(paste0(x,".cohdemo"),sep="\r",
@@ -125,20 +131,136 @@ parseDemo <- function(x,
   mydataDF <- mydataDF[1:(nrow(mydataDF)-1),] # drop footer row
   mydata <- mydata[1:(length(mydata)-1)] # drop footer row
   
+  ## New entity detection: figure out the top expectedPlayers who used FX OneShot the most.
+  ## This excludes cameras (spectators) and also probably eliminates the need for exclNames altogether, unless
+  ## a player drops from the match early and does not rack up a ton of FX OneShots.
+  mostOneShots <- table(mydataDF[which(grepl("FX OneShot",mydataDF$string)),"entity"])
+  playerNums <- as.numeric(names(sort(mostOneShots,decreasing=T)))[1:expectedPlayers]
+  
   ent_str <- gsub("0   ","",unique(mydata[which(grepl("NEW",mydata))]))
   ent_temp <- unlist(strsplit(ent_str,"NEW "))
   ent_nums <- as.numeric(ent_temp[seq(from=1,to=length(ent_temp),by=2)])
   ent_names <- ent_temp[seq(from=2,to=length(ent_temp),by=2)]
   entities <- unique(data.frame(num = ent_nums, name = ent_names))
   entities$name <- as.character(entities$name)
-  entities <- entities[which(entities$num < 100),] ## heuristic, but it should work. Players load first
   
-  entities <- entities[which(!entities$name %in% exclNames),]
+  ## New code:
+  entities <- entities[which(entities$num %in% playerNums),]
+  
+  ## NO LONGER USED:
+  # entities <- entities[which(entities$num < 100),] ## heuristic, but it should work. Players load first
+  # entities <- entities[which(!entities$name %in% exclNames),]
   
   entities$team<-NA
-  entities[1:expectedPlayers,"team"] <- c(rep(0,expectedPlayers/2),rep(1,expectedPlayers/2)) # should usually be right except for tiny maps
   
-  entities <- entities[which(!is.na(entities$name)),]
+  ## Team identification code... hat tip to xhiggy on this; teams can usually be inferred from buff casts/targets.
+  ## Unfortunately, this requires moving some parts of the process to the front.
+  
+  buffFX <- textset[which(powerset %in% buffset)]
+  mydataDF$buff<-0
+  for (i in buffFX){
+    mydataDF[which(grepl(i,mydataDF$string)),"buff"]<-1
+  }
+  buffRows<-which(mydataDF$buff==1)
+  
+  ## For every buff that was cast... try to find caster and target. Caster-target pairings (over a threshold) will be assumed to be teammates.
+  
+  buffdat <- as.data.frame(matrix(NA,nrow=length(buffRows),ncol=1))
+  names(buffdat)[1] <- "buff"
+  buffdat$caster <- NA
+  buffdat$target <- NA
+  buffdat$buff <- 1:length(buffRows)
+  for (i in 1:nrow(buffdat)){
+    thisStart<-buffRows[i]
+    theseRows <- mydataDF[c(thisStart,thisStart+1,thisStart+2,thisStart+3,thisStart+4),]
+    if (sum(theseRows$buff) != 1){
+      stop("This shouldn't happen; error with buff detection for team assignment")
+    }
+    buffdat[i,"caster"] <- theseRows$entity[1]
+    s2targ <- theseRows[which(grepl(" TARGET ENT",theseRows$string)),]
+    thisTarg<-NA
+    if (nrow(s2targ)>0){
+      attackerPre<-substr(substr(s2targ$string,regexpr("ENT",s2targ$string),regexpr("ENT",s2targ$string)+6),5,7)
+      if (length(attackerPre)>1){stop("This shouldn't happen... it means more than one ' TARGET ENT' for a given FX OneShot")}
+      if (substr(attackerPre,2,2)==" "){
+        attackerPre <- substr(attackerPre,1,2) ## hotfix
+      }
+      thisTarg <- as.numeric(attackerPre)
+    }
+    buffdat[i,"target"] <- thisTarg
+  }
+  
+  entities[1,"team"] <- 0 ## assume the first player seen is on Team 0 (ally)
+  firstEnt <- entities[1,"num"]
+  
+  firstTab1 <- as.data.frame(table(buffdat[which(buffdat$caster==firstEnt),"target"]))
+  firstTab2 <- as.data.frame(table(buffdat[which(buffdat$target==firstEnt),"caster"]))
+  firstAllies <- c()
+  if (nrow(firstTab1)>0){
+    firstTab1 <- firstTab1[which(firstTab1$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab1)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab1$Var1)))
+    }
+  }
+  if (nrow(firstTab2)>0){
+    firstTab2 <- firstTab2[which(firstTab2$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab2)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab2$Var1)))
+    }
+  }
+  
+  entities[which(entities$num %in% unique(firstAllies)),"team"] <- 0
+  
+  team0pl <- entities[which(entities$team==0),"num"]
+  
+  ## recycle the firstTab, firstAllies names... run this cycle twice more just to be safe
+  firstTab1 <- as.data.frame(table(buffdat[which(buffdat$caster %in% team0pl),"target"]))
+  firstTab2 <- as.data.frame(table(buffdat[which(buffdat$target %in% team0pl),"caster"]))
+  firstAllies <- c()
+  if (nrow(firstTab1)>0){
+    firstTab1 <- firstTab1[which(firstTab1$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab1)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab1$Var1)))
+    }
+  }
+  if (nrow(firstTab2)>0){
+    firstTab2 <- firstTab2[which(firstTab2$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab2)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab2$Var1)))
+    }
+  }
+  
+  entities[which(entities$num %in% unique(firstAllies)),"team"] <- 0
+  
+  team0pl <- entities[which(entities$team==0),"num"]
+  
+  ## recycle the firstTab, firstAllies names... run this cycle twice more just to be safe
+  firstTab1 <- as.data.frame(table(buffdat[which(buffdat$caster %in% team0pl),"target"]))
+  firstTab2 <- as.data.frame(table(buffdat[which(buffdat$target %in% team0pl),"caster"]))
+  firstAllies <- c()
+  if (nrow(firstTab1)>0){
+    firstTab1 <- firstTab1[which(firstTab1$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab1)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab1$Var1)))
+    }
+  }
+  if (nrow(firstTab2)>0){
+    firstTab2 <- firstTab2[which(firstTab2$Freq > 2),] ## might discard bizarre situations like throwing 1-2 buffs while confused
+    if (nrow(firstTab2)>0){
+      firstAllies<-c(firstAllies,as.numeric(as.character(firstTab2$Var1)))
+    }
+  }
+  
+  entities[which(entities$num %in% unique(firstAllies)),"team"] <- 0
+  
+  if (length(which(entities$team==0)) != expectedPlayers/2){
+    warning("Error in entity detection / team assignment. Reverting back to old team assignment code (may require inspection of teams)")
+    entities[1:expectedPlayers,"team"] <- c(rep(0,expectedPlayers/2),rep(1,expectedPlayers/2))
+  }else{
+    entities[which(is.na(entities$team)),"team"] <- 1
+  }
+  
+  entities <- entities[which(!is.na(entities$name)),] ## This is probably no longer necessary but shouldn't hurt anything
   
   if (checkEntities){
     print(entities[,c("name","team")])
@@ -188,6 +310,12 @@ parseDemo <- function(x,
   }
   
   mydataDF <- mydataDF[which(mydataDF$timesec < matchEnd),]
+  
+  ## customStart can also be used (now that entities have been captured):
+  
+  if (!is.null(customStart)){
+    mydataDF <- mydataDF[which(mydataDF$timesec >= customStart),]
+  }
   
   deaths <- mydataDF[which(((grepl("AIR_DEATH",mydataDF$string) | grepl("HITDEATH",mydataDF$string)) &
                               !grepl("IMPACT",mydataDF$string)) &
