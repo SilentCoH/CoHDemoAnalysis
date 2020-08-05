@@ -36,7 +36,7 @@ parseDemo <- function(x,
                                     "Disintegrate","Ice Blast", "Freeze Ray","Bitter Freeze Ray","Enervating Field",
                                     "Mesmerize","Zapp", "Spirit Shark Jaws","Shriek","Scream","Shout","Screech",
                                     "Power Push","Energy Snipe","Will Domination","Telekinetic Blast","Subdue",
-                                    "Scramble Thoughts","Psionic Lance","Mental Blast"),
+                                    "Scramble Thoughts","Psionic Lance","Mental Blast","Force Bolt"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                   "Rejuvenating Circuit", "Soothe", "Share Pain"),
                       evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly"), ## add Dim Shift?
@@ -86,7 +86,7 @@ parseDemo <- function(x,
                                    "KININERTIALREDUCTIONS.FX","WILLDOMINATION.FX","TELEKINETICBLAST.FX",
                                    "SUBDUEPSIONICBLAST.FX","PSIBLAST_SLOWERCAST.FX","PSIONICLANCEBLASTQUICK.FX",
                                    "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX",
-                                   "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX"),
+                                   "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX","FORCEBOLT.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Super Jump", "Geas", "Burst of Speed","Blaze",
@@ -109,7 +109,7 @@ parseDemo <- function(x,
                                     "Net Arrow","Siphon Speed","Speed Boost","Increase Density",
                                     "Inertial Reduction","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Transfusion",
-                                    "Transference","Soothe","Share Pain")){
+                                    "Transference","Soothe","Share Pain","Force Bolt")){
   
   ## General note: a few times in this code I get lazy by assuming entities will be single/double digits
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
