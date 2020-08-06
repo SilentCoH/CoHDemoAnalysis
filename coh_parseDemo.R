@@ -143,6 +143,7 @@ parseDemo <- function(x,
   ent_names <- ent_temp[seq(from=2,to=length(ent_temp),by=2)]
   entities <- unique(data.frame(num = ent_nums, name = ent_names))
   entities$name <- as.character(entities$name)
+  entities <- entities[which(!duplicated(entities$num)),] ## for rare situations when a player drops and entity is reassigned
   
   ## New code:
   entities <- entities[which(entities$num %in% playerNums),]
