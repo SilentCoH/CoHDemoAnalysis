@@ -36,10 +36,11 @@ parseDemo <- function(x,
                                     "Disintegrate","Ice Blast", "Freeze Ray","Bitter Freeze Ray","Enervating Field",
                                     "Mesmerize","Zapp", "Spirit Shark Jaws","Shriek","Scream","Shout","Screech",
                                     "Power Push","Energy Snipe","Will Domination","Telekinetic Blast","Subdue",
-                                    "Scramble Thoughts","Psionic Lance","Mental Blast","Force Bolt"),
+                                    "Scramble Thoughts","Psionic Lance","Mental Blast","Force Bolt",
+                                    "Cosmic Burst","Proton Volley","X-Ray Beam"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                   "Rejuvenating Circuit", "Soothe", "Share Pain"),
-                      evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly"), ## add Dim Shift?
+                      evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed"), ## add Dim Shift?
                       otherset = c("Crey Pistol","Net Arrow","Weaken","Confuse or Deceive","Regrowth",
                                    "Shock","Transfusion","Transference",
                                    "Siphon Speed"),
@@ -49,8 +50,10 @@ parseDemo <- function(x,
                                   "Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                   "Rejuvenating Circuit","Soothe","Share Pain"),
                       spikeWindow=3.5, min_attacks_per_spike=2, max_time_per_spike_sec=11, hitSupportCredit=TRUE,
-                      healWindow=2, preEvadeWindow=c(-2,1),
-                      customStart=NULL,customEnd=NULL, checkEntities=TRUE, expectedPlayers=16,
+                      healWindow=2, preEvadeWindow=c(-2,1), greenMax=20,
+                      smartStart=TRUE, smartEnd=TRUE, customStart=NULL, customEnd=NULL, checkEntities=TRUE,
+                      suppsTeam0=2, suppsTeam1=2,
+                      expectedPlayers=16,
                       emotePolice=TRUE,
                       textset = c("FIREBALL.FX", "SOOT.FX", "INFERNOBOLT.FX",
                                    "FIREBLASTAIM.FX", "FIREBOLT.FX", "FLARES.FX","XXLARGEFIREBALL.FX", "INFERNO.FX",
@@ -86,7 +89,9 @@ parseDemo <- function(x,
                                    "KININERTIALREDUCTIONS.FX","WILLDOMINATION.FX","TELEKINETICBLAST.FX",
                                    "SUBDUEPSIONICBLAST.FX","PSIBLAST_SLOWERCAST.FX","PSIONICLANCEBLASTQUICK.FX",
                                    "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX",
-                                   "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX","FORCEBOLT.FX"),
+                                   "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX","FORCEBOLT.FX","/STAMINA.FX",
+                                   "RADIATIONBLASTAIM.FX","COSMICBLAST.FX","PROTONBLAST_QUICK.FX",
+                                   "XRAYBEAM.FX","BURSTOFSPEED.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Super Jump", "Geas", "Burst of Speed","Blaze",
@@ -109,14 +114,22 @@ parseDemo <- function(x,
                                     "Net Arrow","Siphon Speed","Speed Boost","Increase Density",
                                     "Inertial Reduction","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Transfusion",
-                                    "Transference","Soothe","Share Pain","Force Bolt")){
+                                    "Transference","Soothe","Share Pain","Force Bolt","Green Insp",
+                                    "Aim","Cosmic Burst","Proton Volley","X-Ray Beam","Burst of Speed")){
   
-  ## General note: a few times in this code I get lazy by assuming entities will be single/double digits
+  ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
   ## matches, runs the risk of having players with 4+ digit entities which might break some of the code.
   
+  ## Always track green inspirations (shows up in defensive data later on)
+  otherset <- unique(c(otherset,"Green Insp"))
+  
   if (is.null(keySkills)){
     keySkills <- unique(c(attackset,healset,evadeset,otherset,buffset))
+  }
+  
+  if (suppsTeam0>3 | suppsTeam1>3){
+    warning("suppsTeam0 and suppsTeam1 only function up to a value of 3 (for now); more supports will not be counted")
   }
   
   mydataDF <- read.delim(paste0(x,".cohdemo"),sep="\r",
@@ -130,6 +143,22 @@ parseDemo <- function(x,
   
   mydataDF <- mydataDF[1:(nrow(mydataDF)-1),] # drop footer row
   mydata <- mydata[1:(length(mydata)-1)] # drop footer row
+  
+  map <- "Map not added to code yet!"
+  
+  if (any(grepl("/Arena_Skyway_01.txt",mydataDF$string))) { map <- "Skyway City" }
+  else if (any(grepl("/Arena_steel_01.txt",mydataDF$string))) { map <- "Steel Canyon" }
+  else if (any(grepl("/Arena_OutbreakRuin_01.txt",mydataDF$string))) { map <- "Outbreak" }
+  else if (any(grepl("/Arena_Atlas_01.txt",mydataDF$string))) { map <- "Atlas Park" }
+  else if (any(grepl("/Arena_Striga_01.txt",mydataDF$string))) { map <- "Striga Isle" }
+  else if (any(grepl("/Arena_Eden_01.txt",mydataDF$string))) { map <- "Eden" }
+  else if (any(grepl("/Arena_Industrial_01.txt",mydataDF$string))) { map <- "Industrial/Siege" }
+  else if (any(grepl("/Arena_Stadium_01.txt",mydataDF$string))) { map <- "Stadium" }
+  else if (any(grepl("/Arena_Coliseum.txt",mydataDF$string))) { map <- "Coliseum" }
+  else if (any(grepl("/Arena_Tech_01.txt",mydataDF$string))) { map <- "Tech Lab" }
+  else if (any(grepl("/Arena_CargoShip_01.txt",mydataDF$string))) { map <- "Cargo Ship" }
+  else if (any(grepl("/Arena_Graveyard_01.txt",mydataDF$string))) { map <- "Graveyard" }
+  else if (any(grepl("/Arena_Perez_01.txt",mydataDF$string))) { map <- "Perez Park" }
   
   ## New entity detection: figure out the top expectedPlayers who used FX OneShot the most.
   ## This excludes cameras (spectators) and also probably eliminates the need for exclNames altogether, unless
@@ -235,7 +264,7 @@ parseDemo <- function(x,
   
   team0pl <- entities[which(entities$team==0),"num"]
   
-  ## recycle the firstTab, firstAllies names... run this cycle twice more just to be safe
+  ## recycle the firstTab, firstAllies names... run this cycle once more just to be safe
   firstTab1 <- as.data.frame(table(buffdat[which(buffdat$caster %in% team0pl),"target"]))
   firstTab2 <- as.data.frame(table(buffdat[which(buffdat$target %in% team0pl),"caster"]))
   firstAllies <- c()
@@ -256,12 +285,14 @@ parseDemo <- function(x,
   
   if (length(which(entities$team==0)) != expectedPlayers/2){
     warning("Error in entity detection / team assignment. Reverting back to old team assignment code (may require inspection of teams)")
+    ## Note: this might happen if teams run "full offense" or if this code is used for very small-scale matches.
     entities[1:expectedPlayers,"team"] <- c(rep(0,expectedPlayers/2),rep(1,expectedPlayers/2))
   }else{
     entities[which(is.na(entities$team)),"team"] <- 1
   }
   
   entities <- entities[which(!is.na(entities$name)),] ## This is probably no longer necessary but shouldn't hurt anything
+  entities <- entities[order(entities$team),]
   
   if (checkEntities){
     print(entities[,c("name","team")])
@@ -295,28 +326,63 @@ parseDemo <- function(x,
   mydataDF <- mydataDF[order(mydataDF$sortind),]
   mydataDF$sortind <- NULL
   
-  ## teammates leaving match after 10+ min of demo recording = end of match
-  leaverow<-which(grepl("DEL",mydataDF$string) & mydataDF$team==0 & mydataDF$timesec>600)
-  if (length(leaverow)>0){
-    matchEnd <- min(mydataDF[which(grepl("DEL",mydataDF$string) & mydataDF$team==0 &
-                                     mydataDF$timesec>600),"timesec"])
+  ## smartStart begins tracking data 1 second before the first player jumps.
+  ## While this hasn't been thoroughly vetted, it should work in most cases.
+  
+  firstJump <- min(mydataDF[which(grepl("JUMP",mydataDF$string) & !grepl("NEW ",mydataDF$string) &
+                                    grepl("MOV ",mydataDF$string)),"timesec"],na.rm=TRUE)
+  firstJumpT <- min(mydataDF[which(grepl("JUMP",mydataDF$string) & !grepl("NEW ",mydataDF$string) &
+                                     grepl("MOV ",mydataDF$string)),"time"],na.rm=TRUE)
+  
+  ## customStart can also be used (now that entities have been captured):
+  
+  if (!is.null(customStart)){
+    if (smartStart){
+      warning("customStart supplied along with smartStart=TRUE. Note that customStart will override.")
+    }
+    mydataDF <- mydataDF[which(mydataDF$timesec >= customStart),]
+  }else if (smartStart){
+    mydataDF$timesec <- mydataDF$timesec - firstJump + 1
+    mydataDF$time <- mydataDF$time - firstJumpT + 1/60
+    mydataDF <- mydataDF[which(mydataDF$timesec >= 0),]
+    firstJump <- 0
+    firstJumpT <- 0
+  }
+  
+  if (smartEnd){
+    ## When smartEnd is used, it stops recording 10 minutes + 1 second after the first jump occurs, regardless of whether
+    ## smartStart is used. This means you can use smartEnd without smartStart if you want to capture pre-match buff stats, etc.
+    matchEnd <- firstJump + 601
   }else{
-    matchEnd <- Inf
+    ## Someone on Team 0 leaving match after 10+ min of demo recording = heuristic end of match
+    leaverow<-which(grepl("DEL",mydataDF$string) & mydataDF$team==0 & mydataDF$timesec>600)
+    if (length(leaverow)>0){
+      matchEnd <- min(mydataDF[which(grepl("DEL",mydataDF$string) & mydataDF$team==0 &
+                                       mydataDF$timesec>600),"timesec"])
+    }else{
+      matchEnd <- Inf
+    }
   }
   
   ## alternatively, if customEnd has been specified, then that overrides.
   ## Basically, advanced users can specify a custom ending time (in seconds) if they know exactly when a match ended
+  ## If used in conjunction with smartStart, users should be aware that timesec gets recalibrated based on the first jump!
   if (!is.null(customEnd)){
+    if (smartEnd){
+      warning("customEnd supplied along with smartEnd=TRUE. Note that customEnd will override.")
+    }
+    if (smartStart & is.null(customStart)){
+      warning("customEnd supplied along with smartStart=TRUE. customStart recalibrates time indices, so be cautious!")
+    }
     matchEnd <- customEnd
   }
   
   mydataDF <- mydataDF[which(mydataDF$timesec < matchEnd),]
   
-  ## customStart can also be used (now that entities have been captured):
+  runtimeMin <- round((max(mydataDF$timesec) - min(mydataDF$timesec)) / 60,0)
+  runtimeSec <- round((max(mydataDF$timesec) - min(mydataDF$timesec)) %% 60,0)
+  runtime <- paste0(runtimeMin,":", ifelse(nchar(runtimeSec)==1,paste0("0",runtimeSec),runtimeSec))
   
-  if (!is.null(customStart)){
-    mydataDF <- mydataDF[which(mydataDF$timesec >= customStart),]
-  }
   
   deaths <- mydataDF[which(((grepl("AIR_DEATH",mydataDF$string) | grepl("HITDEATH",mydataDF$string)) &
                               !grepl("IMPACT",mydataDF$string)) &
@@ -350,6 +416,10 @@ parseDemo <- function(x,
   
   ## For some bizarre reason, SSJ doesn't have an .FX animation. Instead, it shows up as MOV Wall 0.
   ## Might as well just "convert" those values into my own fake .FX.
+  
+  ## Note: SSJ will always have an NA target. Other NA targets are typically self-targeted powers (e.g. Jaunt) or projectile misses.
+  ## There's really no choice but to give "on-spike" credit when an NA target occurs, because it could've just been
+  ## a miss. However, off-spike targets can be removed.
   
   mydataDF$string <- gsub("MOV Wall 0","FX OneShot FAKE/SSJ.FX",mydataDF$string)
   
@@ -401,6 +471,7 @@ parseDemo <- function(x,
   fxrows <- which(grepl("FX OneShot", mydataDF$string) &
                     !grepl("FAKE/", mydataDF$string) &
                     ## the line above excludes SSJ (cannot find target) and Strangler (already has target)
+                    !grepl("NEW ",mydataDF$string) &
                     !is.na(mydataDF$team))
   
   s2<-mydataDF[unique(sort(c(fxrows,fxrows+1,fxrows+2,fxrows+3,fxrows+4,fxrows+5))),]
@@ -433,9 +504,8 @@ parseDemo <- function(x,
     mydataDF[which(mydataDF$target==entities[i,"num"]),"targName"] <- entities[i,"name"]
   }
   
-  ## Note: SSJ will always have an NA target. Other NA targets are typically self-targeted powers (e.g. Jaunt) or projectile misses.
-  ## There's really no choice but to give "on-spike" credit when an NA target occurs, because it could've just been
-  ## a miss. However, off-spike targets can be removed.
+  greenUsage <- mydataDF[which(grepl(textset[which(powerset=="Green Insp")],mydataDF$string)),
+                               c("entity","string","time","timesec","team","name")]
   
   if (emotePolice){
     emoteRows <- which(grepl("EMOTE",mydataDF$string))
@@ -607,13 +677,22 @@ parseDemo <- function(x,
       temptab1 <- rbind(temptab1, data.frame(Var1=i,Freq=0))
     }
   }
-  supp0_1 <- as.character(temptab0[(expectedPlayers/2)-1,"Var1"])
-  supp0_2 <- as.character(temptab0[(expectedPlayers/2)-0,"Var1"])
-  supp1_1 <- as.character(temptab1[(expectedPlayers/2)-1,"Var1"])
-  supp1_2 <- as.character(temptab1[(expectedPlayers/2)-0,"Var1"])
+  supp0_1 <- NULL
+  supp0_2 <- NULL
+  supp0_3 <- NULL
+  supp1_1 <- NULL
+  supp1_2 <- NULL
+  supp1_3 <- NULL
   
-  fxteam0atk$targEmp <- ifelse(fxteam0atk$targName %in% c(supp1_1,supp1_2),1,0)
-  fxteam1atk$targEmp <- ifelse(fxteam1atk$targName %in% c(supp0_1,supp0_2),1,0)
+  if (suppsTeam0>0){ supp0_1 <- as.character(temptab0[(expectedPlayers/2)-0,"Var1"]) }
+  if (suppsTeam0>1){ supp0_2 <- as.character(temptab0[(expectedPlayers/2)-1,"Var1"]) }
+  if (suppsTeam0>2){ supp0_3 <- as.character(temptab0[(expectedPlayers/2)-2,"Var1"]) }
+  if (suppsTeam1>0){ supp1_1 <- as.character(temptab1[(expectedPlayers/2)-0,"Var1"]) }
+  if (suppsTeam1>1){ supp1_2 <- as.character(temptab1[(expectedPlayers/2)-1,"Var1"]) }
+  if (suppsTeam1>2){ supp1_3 <- as.character(temptab1[(expectedPlayers/2)-2,"Var1"]) }
+  
+  fxteam0atk$targEmp <- ifelse(fxteam0atk$targName %in% c(supp1_1,supp1_2,supp1_3),1,0)
+  fxteam1atk$targEmp <- ifelse(fxteam1atk$targName %in% c(supp0_1,supp0_2,supp0_3),1,0)
   
   fxteam0ev <- fxteam0[which(fxteam0$evade==1),c("name","time",
                                                  "timesec","team","power2","evade","target","targName")]
@@ -815,7 +894,8 @@ parseDemo <- function(x,
     listOut<-list()
     listOutHeal<-list()
     datOutNames<-c("spike","target","approx_success","begin_time","end_time",
-                   "players_on_spike","attack_count","spike_duration","avg_timing_distance","evaded","healed")
+                   "players_on_spike","attack_count","spike_duration","avg_timing_distance","evaded","healed",
+                   "greens_available","greens_used","greens")
     datOut<-as.data.frame(matrix(NA,nrow=max(x$spike),ncol=length(datOutNames)))
     names(datOut)<-datOutNames
     datOut[,"spike"]<-sort(unique(x$spike))
@@ -824,7 +904,7 @@ parseDemo <- function(x,
       thisSpike<-datOut[i,"spike"]
       thisSpikeDetail<-x[which(x$spike==thisSpike),]
       spikeDatNames<-c("name","target","approx_success","on_spike","attack_count","first_attack_timing","first_attack_rank",
-                       "first_timing_distance","chain_duration","attack_combo")
+                       "first_timing_distance","abs_timing_distance","chain_duration","attack_combo")
       spikeDat <- as.data.frame(matrix(NA,nrow=expectedPlayers/2,ncol=length(spikeDatNames)))
       names(spikeDat)<-spikeDatNames
       
@@ -868,6 +948,7 @@ parseDemo <- function(x,
         if (is.nan(spikeDat[j,"first_timing_distance"])){
           spikeDat[j,"first_timing_distance"] <- NA
         }
+        spikeDat[j,"abs_timing_distance"] <- abs(spikeDat[j,"first_timing_distance"])
       }
       
       listOut[[i]] <- spikeDat
@@ -922,6 +1003,16 @@ parseDemo <- function(x,
       }
       
       listOutHeal[[i]] <- healDat
+      
+      ## Look for green insp usage, hard-coded to count within 3 sec of the last attack
+      ## Why 3 sec instead of 2, like healing? Arbitrary call; sometimes players top themselves off quickly after a spike
+      datOut[i,"greens_available"] <- greenMax -
+        nrow(greenUsage[which(greenUsage$name==datOut[i,"target"] & greenUsage$timesec < datOut[i,"begin_time"]),])
+      datOut[i,"greens_used"] <- nrow(greenUsage[which(greenUsage$name==datOut[i,"target"] & greenUsage$timesec >= datOut[i,"begin_time"] &
+                                                         greenUsage$timesec <= datOut[i,"end_time"] + 3),])
+      ## Sometimes greens are picked up mid-match
+      if (datOut[i,"greens_available"] < datOut[i,"greens_used"]) { datOut[i,"greens_available"] <- datOut[i,"greens_used"] }
+      datOut[i,"greens"] <- ifelse(datOut[i,"greens_used"] > 0,1,0) ## binary indicator (for use in other functions later on)
     }
     return(list(spikeSummary = datOut,
                 spikeDetails = listOut,
@@ -1028,6 +1119,7 @@ parseDemo <- function(x,
   spikeComparison[5,2:3]<-c(mean(s0good$spikeSummary$spike_duration),mean(s1good$spikeSummary$spike_duration))
   spikeComparison[6,2:3]<-c(mean(s0good$spikeSummary$avg_timing_distance,na.rm=TRUE),
                             mean(s1good$spikeSummary$avg_timing_distance,na.rm=TRUE))
+  spikeComparison <- list(map = map, runtime = runtime, spikeComparison = spikeComparison)
   
   
   return(list(powerSummary0 = summ0,
@@ -1041,6 +1133,7 @@ parseDemo <- function(x,
               spikeComparison = spikeComparison,
               entities0 = ent_0,
               entities1 = ent_1,
+              greenUsage = greenUsage[order(greenUsage$team,greenUsage$timesec),c("entity","name","team","time","timesec")],
               emoteUsage = emoteUsage))
 }
 
