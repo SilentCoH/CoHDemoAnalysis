@@ -273,7 +273,7 @@ analyzePlayerGreens <- function(parseOut, name, greenMax=20){
   
   low_on_greens_time_minutes <- NA
   if (nrow(greenDat) >= greenMax - 2){ ## consider someone "low" after they use their 18th green
-    low_on_greens <- greenDat[(greenMax-2),"time"]
+    low_on_greens_time_minutes <- greenDat[(greenMax-2),"time"]
   }
   
   spikes_while_low <- 0
