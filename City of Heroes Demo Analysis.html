@@ -13108,6 +13108,7 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
+<li>8/10/20 - added analysis of green inspirations, "smart" start and end of match detection (on by default), a few more outputs like map name and duration of ability tracking (should be 10 minutes 1 second by default with smart start and end of match detection), abs_timing_distance as an offensive statistic. Search for 8/10 in the rest of this document in order to see some notes that I integrated on these features.</li>
 <li>8/4/20 - revamped entity detection (which was the oldest, laziest part of the code) so that the demo should work fairly well for participant and spectator demos alike. This means the exclNames parameter is likely obsolete. Also revamped team assignment based on something suggested in xhiggy and mjb's code - thank you! Finally, I added customStart as an optional parameter, with similar functionality to customEnd.</li>
 </ul>
 
@@ -13185,7 +13186,7 @@ div#notebook {
 <li>Load into an Arena match</li>
 <li>Type "/demorecord DEMONAME" into chat (a lot of times I will use d1, d2, d3 for the first matches of the night and then rename them later)</li>
 <li>Play (or spectate) the match</li>
-<li>Optionally, at the buzzer at the end of the match, type or hit a macro for /demostop . Otherwise the demo will stop when you leave the zone, but it may pick up kills that occur after the buzzer</li>
+<li>Optionally, at the buzzer at the end of the match, type or hit a macro for /demostop . Otherwise the demo will stop when you leave the zone, but it may pick up kills that occur after the buzzer. Note that smart start and end detection is on by default, so scores should be pretty close to accurate, even if you recorded time after the buzzer</li>
 <li>Open R or RStudio</li>
 <li><strong>If you are in R</strong>, you will probably want to open a new script (File -&gt; New Script) so that you can copy some of the code below and then run highlighted portions (highlight -&gt; Ctrl+R), where the output will appear in the console (stretch the console window as needed).</li>
 <li><strong>If you are in RStudio</strong>, which requires you to also have R installed, then you should already have a script and console window. Some versions of RStudio use Ctrl+Enter to run highlighted parts instead of Ctrl+R.</li>
@@ -13227,6 +13228,9 @@ div#notebook {
 
 <span class="n">healing0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupHealing</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span><span class="m">0</span><span class="p">)</span>               <span class="c1">## Healing summary for Team 0</span>
 <span class="n">healing1</span><span class="o">&lt;-</span><span class="nf">analyzeGroupHealing</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span><span class="m">1</span><span class="p">)</span>               <span class="c1">## Healing summary for Team 1</span>
+
+<span class="n">greens0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupGreens</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="n">greenMax</span><span class="o">=</span><span class="m">20</span><span class="p">)</span>   <span class="c1">## Green insp summary for Team 0 (added 8/10)</span>
+<span class="n">greens1</span><span class="o">&lt;-</span><span class="nf">analyzeGroupGreens</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="n">greenMax</span><span class="o">=</span><span class="m">20</span><span class="p">)</span>   <span class="c1">## Green insp summary for Team 1 (added 8/10)</span>
 
 <span class="c1">## Now, in the console, you can simply call objects like offense0 to see the summaries.</span>
 <span class="c1">## However, out1 has more data than just these summaries. You can run names(out1) to inspect further.</span>
@@ -13396,6 +13400,8 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h4 id="The-spike-comparison-contains-a-basic-summary-showing:">The spike comparison contains a basic summary showing:<a class="anchor-link" href="#The-spike-comparison-contains-a-basic-summary-showing:">&#182;</a></h4><ul>
+<li>Map (added 8/10)</li>
+<li>Runtime of the demo's tracking portion - should typically be 10 minutes, 1 second if using smartStart and smartEnd</li>
 <li>Approximate score of the match (not perfect but probably correct 95% of the time; once in a while, deaths get missed, and kills after the buzzer will count unless you use the <em>customEnd</em> parameter. Using /demostop at the buzzer will improve accuracy)</li>
 <li>Approximate number of spikes fired (can tune spike detection with parameters)</li>
 <li>Average number of players who fired at least one attack per spike</li>
@@ -13409,7 +13415,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">out1</span><span class="o">$</span><span class="n">spikeComparison</span>                                <span class="c1">## Quick high-level match summary</span>
@@ -13430,17 +13436,25 @@ div#notebook {
 
 
 <div class="output_html rendered_html output_subarea ">
-<table>
+<dl>
+	<dt>$map</dt>
+		<dd>'Striga Isle'</dd>
+	<dt>$runtime</dt>
+		<dd>'10:01'</dd>
+	<dt>$spikeComparison</dt>
+		<dd><table>
 <thead><tr><th scope=col>Spike_Attribute</th><th scope=col>Ally</th><th scope=col>Enemy</th></tr></thead>
 <tbody>
 	<tr><td>Approx Kills         </td><td>16.000000            </td><td>16.000000            </td></tr>
-	<tr><td>Total Spikes         </td><td>53.000000            </td><td>51.000000            </td></tr>
-	<tr><td>Avg Players on Spike </td><td> 3.811321            </td><td> 4.196078            </td></tr>
-	<tr><td>Avg Attacks Per Spike</td><td> 7.943396            </td><td> 8.058824            </td></tr>
-	<tr><td>Avg Spike Duration   </td><td> 4.060245            </td><td> 3.742451            </td></tr>
-	<tr><td>Avg Timing Diff      </td><td> 1.018266            </td><td> 1.005447            </td></tr>
+	<tr><td>Total Spikes         </td><td>52.000000            </td><td>50.000000            </td></tr>
+	<tr><td>Avg Players on Spike </td><td> 3.788462            </td><td> 4.240000            </td></tr>
+	<tr><td>Avg Attacks Per Spike</td><td> 7.923077            </td><td> 8.180000            </td></tr>
+	<tr><td>Avg Spike Duration   </td><td> 4.040365            </td><td> 3.809140            </td></tr>
+	<tr><td>Avg Timing Diff      </td><td> 1.002010            </td><td> 1.018158            </td></tr>
 </tbody>
 </table>
+</dd>
+</dl>
 
 </div>
 
@@ -13499,6 +13513,7 @@ div#notebook {
 <li>first_attack_timing = average time <em>in seconds</em> that the player was behind whoever fired first on the spike. Note that this will always be a positive value unless you fire first on every single spike that you're on, in which case it would be 0. Higher values = later to the spike.</li>
 <li>first_attack_rank = same as above but instead it's your ranking (first attacker is 1, second attacker is 2, etc.). Higher values = later to the spike.</li>
 <li>first_timing_distance = average difference <em>in seconds</em> between your first attack and <em>everyone else's</em>, across each spike. Negative values = tend to be later than your teammates; positive values = tend to be earlier than your teammates. Players who fire with the team will be close to 0, and you generally want the whole team to be closer to 0. Though keep in mind it's still averaged across all spikes. As you review more and more matches, you will start to get a feel for what seems like good vs. bad values for this metric.</li>
+<li>abs_timing_distance = average of the absolute value of first_timing_distance across all spikes. Taking the absolute value means this number will always be positive, so it does not tell you if you are late or early. Instead, it tells you in absolute terms how far you tend to be from your teammates' first attacks, so lower is generally more in sync with your teammates. This can be more useful than first_timing_distance in some ways because (in theory) someone could be very early on half of spikes and very late on the other half, and they would have a first_timing_distance near 0 -- which is generally good -- but then they will have a very large value for this metric, which is less desirable. This metric was added 8/10.</li>
 <li>chain_duration = average firing duration, correlated strongly with attacks_per_spike. This is the time in seconds between the first attack fired on the spike and the last attack fired. It does <strong>not</strong> do anything with animation times (but that could be added).</li>
 <li>compactness = not sure how useful this is. It's chain_duration / attacks_per_spike, so lower values are better. You would have high values if you typically fired 1 attack, got an "out of range" warning, ran to catch up, fired another attack... etc. It's trying to measure how quickly users launch their attacks in succession, but it's not actually that useful IMO.</li>
 </ul>
@@ -13509,7 +13524,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">offense0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupOffense</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span><span class="m">0</span><span class="p">)</span>               <span class="c1">## Offensive summary for Team 0</span>
@@ -13535,16 +13550,16 @@ div#notebook {
 
 <div class="output_html rendered_html output_subarea ">
 <table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>on_spike_pct</th><th scope=col>attacks_per_spike</th><th scope=col>first_attack_timing</th><th scope=col>first_attack_rank</th><th scope=col>first_timing_distance</th><th scope=col>chain_duration</th><th scope=col>compactness</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>on_spike_pct</th><th scope=col>attacks_per_spike</th><th scope=col>first_attack_timing</th><th scope=col>first_attack_rank</th><th scope=col>first_timing_distance</th><th scope=col>abs_timing_distance</th><th scope=col>chain_duration</th><th scope=col>compactness</th></tr></thead>
 <tbody>
-	<tr><td>Blazing Doyler    </td><td>10                </td><td>0.6603774         </td><td>2.085714          </td><td>0.7598000         </td><td>2.514286          </td><td> 0.38390637       </td><td>1.925171          </td><td>0.9230274         </td></tr>
-	<tr><td>NobGoblin         </td><td> 1                </td><td>0.7169811         </td><td>2.184211          </td><td>0.8922105         </td><td>2.539474          </td><td> 0.08499685       </td><td>1.956579          </td><td>0.8957831         </td></tr>
-	<tr><td>Peaks             </td><td>11                </td><td>0.4716981         </td><td>1.840000          </td><td>1.9934000         </td><td>3.920000          </td><td>-1.01555733       </td><td>1.697600          </td><td>0.9226087         </td></tr>
-	<tr><td>Drunk Love        </td><td>14                </td><td>0.5849057         </td><td>2.032258          </td><td>0.7164194         </td><td>2.241935          </td><td> 0.57828280       </td><td>2.338000          </td><td>1.1504444         </td></tr>
-	<tr><td>Doom Reverb       </td><td> 1                </td><td>0.8679245         </td><td>2.282609          </td><td>0.8980652         </td><td>2.413043          </td><td> 0.07841626       </td><td>2.173543          </td><td>0.9522190         </td></tr>
-	<tr><td>Firehawk Maximum  </td><td>10                </td><td>0.5094340         </td><td>1.888889          </td><td>1.4890741         </td><td>3.037037          </td><td>-0.44261481       </td><td>1.765481          </td><td>0.9346667         </td></tr>
-	<tr><td>We're All Mad Here</td><td> 1                </td><td>0.0000000         </td><td>     NaN          </td><td>      NaN         </td><td>     NaN          </td><td>        NaN       </td><td>     NaN          </td><td>      NaN         </td></tr>
-	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0.0000000         </td><td>     NaN          </td><td>      NaN         </td><td>     NaN          </td><td>        NaN       </td><td>     NaN          </td><td>      NaN         </td></tr>
+	<tr><td>Blazing Doyler    </td><td>10                </td><td>0.6538462         </td><td>2.058824          </td><td>0.7821471         </td><td>2.558824          </td><td> 0.32344899       </td><td>0.7355146         </td><td>1.880265          </td><td>0.9132714         </td></tr>
+	<tr><td>NobGoblin         </td><td> 1                </td><td>0.7115385         </td><td>2.189189          </td><td>0.8901892         </td><td>2.554054          </td><td> 0.05485093       </td><td>0.9310731         </td><td>1.975811          </td><td>0.9025309         </td></tr>
+	<tr><td>Peaks             </td><td>11                </td><td>0.4807692         </td><td>1.840000          </td><td>1.9934000         </td><td>3.920000          </td><td>-1.01555733       </td><td>1.5366840         </td><td>1.697600          </td><td>0.9226087         </td></tr>
+	<tr><td>Drunk Love        </td><td>14                </td><td>0.5769231         </td><td>2.066667          </td><td>0.6665667         </td><td>2.183333          </td><td> 0.61042556       </td><td>1.3401311         </td><td>2.415933          </td><td>1.1690000         </td></tr>
+	<tr><td>Doom Reverb       </td><td> 1                </td><td>0.8653846         </td><td>2.311111          </td><td>0.8048222         </td><td>2.355556          </td><td> 0.18008917       </td><td>0.9172633         </td><td>2.221844          </td><td>0.9613750         </td></tr>
+	<tr><td>Firehawk Maximum  </td><td> 9                </td><td>0.5000000         </td><td>1.884615          </td><td>1.4985385         </td><td>3.038462          </td><td>-0.49137885       </td><td>1.1488673         </td><td>1.765077          </td><td>0.9365714         </td></tr>
+	<tr><td>We're All Mad Here</td><td> 1                </td><td>0.0000000         </td><td>     NaN          </td><td>      NaN         </td><td>     NaN          </td><td>        NaN       </td><td>      NaN         </td><td>     NaN          </td><td>      NaN         </td></tr>
+	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0.0000000         </td><td>     NaN          </td><td>      NaN         </td><td>     NaN          </td><td>        NaN       </td><td>      NaN         </td><td>     NaN          </td><td>      NaN         </td></tr>
 </tbody>
 </table>
 
@@ -13560,16 +13575,16 @@ div#notebook {
 
 <div class="output_html rendered_html output_subarea ">
 <table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>on_spike_pct</th><th scope=col>attacks_per_spike</th><th scope=col>first_attack_timing</th><th scope=col>first_attack_rank</th><th scope=col>first_timing_distance</th><th scope=col>chain_duration</th><th scope=col>compactness</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>on_spike_pct</th><th scope=col>attacks_per_spike</th><th scope=col>first_attack_timing</th><th scope=col>first_attack_rank</th><th scope=col>first_timing_distance</th><th scope=col>abs_timing_distance</th><th scope=col>chain_duration</th><th scope=col>compactness</th></tr></thead>
 <tbody>
-	<tr><td>Viridious     </td><td> 7            </td><td>0.7843137     </td><td>2.225000      </td><td>0.8094000     </td><td>2.862500      </td><td> 0.25813583   </td><td>2.023400      </td><td>0.9093933     </td></tr>
-	<tr><td>White T Poison</td><td> 9            </td><td>0.6666667     </td><td>1.735294      </td><td>0.9541765     </td><td>2.823529      </td><td>-0.06638578   </td><td>1.280118      </td><td>0.7376949     </td></tr>
-	<tr><td>Blaziernoed   </td><td>10            </td><td>0.7254902     </td><td>2.135135      </td><td>0.6525676     </td><td>2.148649      </td><td> 0.32257176   </td><td>2.164243      </td><td>1.0136329     </td></tr>
-	<tr><td>March         </td><td>11            </td><td>0.6078431     </td><td>1.709677      </td><td>1.0065161     </td><td>2.629032      </td><td>-0.02054839   </td><td>1.134097      </td><td>0.6633396     </td></tr>
-	<tr><td>Delectington  </td><td> 9            </td><td>0.7058824     </td><td>1.972222      </td><td>1.1535556     </td><td>3.055556      </td><td>-0.20736857   </td><td>1.586139      </td><td>0.8042394     </td></tr>
-	<tr><td>Indecent      </td><td> 5            </td><td>0.7058824     </td><td>1.666667      </td><td>1.1938333     </td><td>3.180556      </td><td>-0.33674286   </td><td>1.006278      </td><td>0.6037667     </td></tr>
-	<tr><td>Average Friend</td><td> 1            </td><td>0.0000000     </td><td>     NaN      </td><td>      NaN     </td><td>     NaN      </td><td>        NaN   </td><td>     NaN      </td><td>      NaN     </td></tr>
-	<tr><td>ghostmaster   </td><td> 1            </td><td>0.0000000     </td><td>     NaN      </td><td>      NaN     </td><td>     NaN      </td><td>        NaN   </td><td>     NaN      </td><td>      NaN     </td></tr>
+	<tr><td>Viridious     </td><td> 7            </td><td>0.80          </td><td>2.225000      </td><td>0.8094000     </td><td>2.862500      </td><td> 0.25813583   </td><td>1.1032075     </td><td>2.023400      </td><td>0.9093933     </td></tr>
+	<tr><td>White T Poison</td><td> 9            </td><td>0.66          </td><td>1.757576      </td><td>0.9707273     </td><td>2.848485      </td><td>-0.05603384   </td><td>1.1725783     </td><td>1.318909      </td><td>0.7504138     </td></tr>
+	<tr><td>Blaziernoed   </td><td>10            </td><td>0.74          </td><td>2.135135      </td><td>0.6525676     </td><td>2.148649      </td><td> 0.32257176   </td><td>0.8933153     </td><td>2.164243      </td><td>1.0136329     </td></tr>
+	<tr><td>March         </td><td>11            </td><td>0.62          </td><td>1.709677      </td><td>1.0065161     </td><td>2.629032      </td><td>-0.02054839   </td><td>1.0301871     </td><td>1.134097      </td><td>0.6633396     </td></tr>
+	<tr><td>Delectington  </td><td> 8            </td><td>0.70          </td><td>2.000000      </td><td>1.1865143     </td><td>3.114286      </td><td>-0.22546765   </td><td>1.0229373     </td><td>1.631457      </td><td>0.8157286     </td></tr>
+	<tr><td>Indecent      </td><td> 5            </td><td>0.72          </td><td>1.666667      </td><td>1.1938333     </td><td>3.180556      </td><td>-0.33674286   </td><td>0.7949333     </td><td>1.006278      </td><td>0.6037667     </td></tr>
+	<tr><td>Average Friend</td><td> 1            </td><td>0.00          </td><td>     NaN      </td><td>      NaN     </td><td>     NaN      </td><td>        NaN   </td><td>      NaN     </td><td>     NaN      </td><td>      NaN     </td></tr>
+	<tr><td>ghostmaster   </td><td> 1            </td><td>0.00          </td><td>     NaN      </td><td>      NaN     </td><td>     NaN      </td><td>        NaN   </td><td>      NaN     </td><td>     NaN      </td><td>      NaN     </td></tr>
 </tbody>
 </table>
 
@@ -13594,9 +13609,10 @@ div#notebook {
 <li>avg_attack_count = average number of attacks fired when this person was targeted.</li>
 <li>evaded = percentage of attempts where this person took some evasive action around the same time. This is counted regardless of whether the evasion was "successful."</li>
 <li>healed = percentage of attempts where someone attempted a heal on this person (again, regardless of whether it was successful or not).</li>
+<li>used_greens = percentage of attempts where at least one green inspiration was used. Added 8/10.</li>
 </ul>
 <ul>
-<li>team_survival_rate, team_evade_rate, and team_heal_rate are simple averages across all spikes for how often players survived, evaded, and were healed. Note that better evasion rates likely have an inverse relationship with better heal rates - i.e. players/teams who evade more often are less likely to need (or receive) heals.</li>
+<li>team_survival_rate, team_evade_rate, team_heal_rate, and team_green_rate are simple averages across all spikes for how often players survived, evaded, were healed, and popped greens per spike. Note that better evasion rates likely have an inverse relationship with better heal rates - i.e. players/teams who evade more often are less likely to need (or receive) heals.</li>
 </ul>
 
 </div>
@@ -13604,7 +13620,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">defense0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupDefense</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span><span class="m">0</span><span class="p">)</span>               <span class="c1">## Defensive summary for Team 0</span>
@@ -13632,40 +13648,42 @@ div#notebook {
 <dl>
 	<dt>$powerUsage</dt>
 		<dd><table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>Phase Shift</th><th scope=col>Hibernate</th><th scope=col>Jaunt</th><th scope=col>Raptor or Fly</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>Phase Shift</th><th scope=col>Hibernate</th><th scope=col>Jaunt</th><th scope=col>Raptor or Fly</th><th scope=col>Green Insp</th></tr></thead>
 <tbody>
-	<tr><td>Blazing Doyler    </td><td>10                </td><td>3                 </td><td>0.7000000         </td><td>3                 </td><td>0                 </td><td> 2                </td><td> 0                </td></tr>
-	<tr><td>NobGoblin         </td><td> 1                </td><td>1                 </td><td>0.0000000         </td><td>0                 </td><td>0                 </td><td> 2                </td><td> 2                </td></tr>
-	<tr><td>Peaks             </td><td>11                </td><td>4                 </td><td>0.6363636         </td><td>2                 </td><td>0                 </td><td>12                </td><td> 1                </td></tr>
-	<tr><td>Drunk Love        </td><td>14                </td><td>3                 </td><td>0.7857143         </td><td>4                 </td><td>0                 </td><td>17                </td><td> 3                </td></tr>
-	<tr><td>Doom Reverb       </td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>0                 </td><td>0                 </td><td>17                </td><td> 9                </td></tr>
-	<tr><td>Firehawk Maximum  </td><td>10                </td><td>5                 </td><td>0.5000000         </td><td>1                 </td><td>0                 </td><td> 3                </td><td> 0                </td></tr>
-	<tr><td>We're All Mad Here</td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>1                 </td><td>0                 </td><td> 8                </td><td> 1                </td></tr>
-	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0                 </td><td>1.0000000         </td><td>0                 </td><td>2                 </td><td> 4                </td><td>38                </td></tr>
+	<tr><td>Blazing Doyler    </td><td>10                </td><td>3                 </td><td>0.7000000         </td><td>3                 </td><td>0                 </td><td> 2                </td><td> 0                </td><td>11                </td></tr>
+	<tr><td>NobGoblin         </td><td> 1                </td><td>1                 </td><td>0.0000000         </td><td>0                 </td><td>0                 </td><td> 2                </td><td> 2                </td><td> 0                </td></tr>
+	<tr><td>Peaks             </td><td>11                </td><td>4                 </td><td>0.6363636         </td><td>2                 </td><td>0                 </td><td>12                </td><td> 0                </td><td>14                </td></tr>
+	<tr><td>Drunk Love        </td><td>14                </td><td>3                 </td><td>0.7857143         </td><td>4                 </td><td>0                 </td><td>17                </td><td> 3                </td><td>20                </td></tr>
+	<tr><td>Doom Reverb       </td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>0                 </td><td>0                 </td><td>17                </td><td> 9                </td><td> 0                </td></tr>
+	<tr><td>Firehawk Maximum  </td><td> 9                </td><td>5                 </td><td>0.4444444         </td><td>1                 </td><td>0                 </td><td> 3                </td><td> 0                </td><td>12                </td></tr>
+	<tr><td>We're All Mad Here</td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>1                 </td><td>0                 </td><td> 8                </td><td> 1                </td><td> 0                </td></tr>
+	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0                 </td><td>1.0000000         </td><td>0                 </td><td>2                 </td><td> 4                </td><td>38                </td><td> 0                </td></tr>
 </tbody>
 </table>
 </dd>
 	<dt>$defenseData</dt>
 		<dd><table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>avg_players_on_spike</th><th scope=col>avg_attack_count</th><th scope=col>avg_spike_duration</th><th scope=col>evaded</th><th scope=col>healed</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>avg_players_on_spike</th><th scope=col>avg_attack_count</th><th scope=col>avg_spike_duration</th><th scope=col>evaded</th><th scope=col>healed</th><th scope=col>used_greens</th></tr></thead>
 <tbody>
-	<tr><td>Blazing Doyler    </td><td>10                </td><td>3                 </td><td>0.7000000         </td><td>4.500000          </td><td>8.900000          </td><td>3.826300          </td><td>0.3000000         </td><td>0.8000000         </td></tr>
-	<tr><td>NobGoblin         </td><td> 1                </td><td>1                 </td><td>0.0000000         </td><td>4.000000          </td><td>9.000000          </td><td>3.034000          </td><td>0.0000000         </td><td>0.0000000         </td></tr>
-	<tr><td>Peaks             </td><td>11                </td><td>4                 </td><td>0.6363636         </td><td>4.545455          </td><td>8.545455          </td><td>3.394727          </td><td>0.5454545         </td><td>0.9090909         </td></tr>
-	<tr><td>Drunk Love        </td><td>14                </td><td>3                 </td><td>0.7857143         </td><td>4.428571          </td><td>8.785714          </td><td>4.771714          </td><td>0.7142857         </td><td>0.7857143         </td></tr>
-	<tr><td>Doom Reverb       </td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>1.000000          </td><td>1.000000          </td><td>0.000000          </td><td>1.0000000         </td><td>0.0000000         </td></tr>
-	<tr><td>Firehawk Maximum  </td><td>10                </td><td>5                 </td><td>0.5000000         </td><td>4.000000          </td><td>7.400000          </td><td>2.927200          </td><td>0.2000000         </td><td>0.9000000         </td></tr>
-	<tr><td>We're All Mad Here</td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>4.000000          </td><td>6.000000          </td><td>7.955000          </td><td>1.0000000         </td><td>1.0000000         </td></tr>
-	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0                 </td><td>1.0000000         </td><td>2.666667          </td><td>5.000000          </td><td>2.731667          </td><td>1.0000000         </td><td>0.0000000         </td></tr>
+	<tr><td>Blazing Doyler    </td><td>10                </td><td>3                 </td><td>0.7000000         </td><td>4.500000          </td><td>8.900000          </td><td>3.826300          </td><td>0.3000000         </td><td>0.8000000         </td><td>0.6000000         </td></tr>
+	<tr><td>NobGoblin         </td><td> 1                </td><td>1                 </td><td>0.0000000         </td><td>4.000000          </td><td>9.000000          </td><td>3.034000          </td><td>0.0000000         </td><td>0.0000000         </td><td>0.0000000         </td></tr>
+	<tr><td>Peaks             </td><td>11                </td><td>4                 </td><td>0.6363636         </td><td>4.545455          </td><td>8.545455          </td><td>3.394727          </td><td>0.5454545         </td><td>0.9090909         </td><td>0.5454545         </td></tr>
+	<tr><td>Drunk Love        </td><td>14                </td><td>3                 </td><td>0.7857143         </td><td>4.428571          </td><td>8.785714          </td><td>4.771714          </td><td>0.7142857         </td><td>0.7857143         </td><td>0.4285714         </td></tr>
+	<tr><td>Doom Reverb       </td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>1.000000          </td><td>1.000000          </td><td>0.000000          </td><td>1.0000000         </td><td>0.0000000         </td><td>0.0000000         </td></tr>
+	<tr><td>Firehawk Maximum  </td><td> 9                </td><td>5                 </td><td>0.4444444         </td><td>4.222222          </td><td>8.000000          </td><td>3.207111          </td><td>0.2222222         </td><td>0.8888889         </td><td>0.4444444         </td></tr>
+	<tr><td>We're All Mad Here</td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>4.000000          </td><td>6.000000          </td><td>7.955000          </td><td>1.0000000         </td><td>1.0000000         </td><td>0.0000000         </td></tr>
+	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0                 </td><td>1.0000000         </td><td>2.666667          </td><td>5.000000          </td><td>2.731667          </td><td>1.0000000         </td><td>0.0000000         </td><td>0.0000000         </td></tr>
 </tbody>
 </table>
 </dd>
 	<dt>$team_survival_rate</dt>
-		<dd>0.686274509803922</dd>
+		<dd>0.68</dd>
 	<dt>$team_evade_rate</dt>
-		<dd>0.509803921568627</dd>
+		<dd>0.52</dd>
 	<dt>$team_heal_rate</dt>
-		<dd>0.764705882352941</dd>
+		<dd>0.76</dd>
+	<dt>$team_green_rate</dt>
+		<dd>0.44</dd>
 </dl>
 
 </div>
@@ -13682,40 +13700,42 @@ div#notebook {
 <dl>
 	<dt>$powerUsage</dt>
 		<dd><table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>Phase Shift</th><th scope=col>Hibernate</th><th scope=col>Jaunt</th><th scope=col>Raptor or Fly</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>Phase Shift</th><th scope=col>Hibernate</th><th scope=col>Jaunt</th><th scope=col>Raptor or Fly</th><th scope=col>Green Insp</th></tr></thead>
 <tbody>
-	<tr><td>Viridious     </td><td> 7            </td><td>3             </td><td>0.5714286     </td><td>3             </td><td>0             </td><td>10            </td><td>19            </td></tr>
-	<tr><td>White T Poison</td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>2             </td><td>0             </td><td>25            </td><td>27            </td></tr>
-	<tr><td>Blaziernoed   </td><td>10            </td><td>1             </td><td>0.9000000     </td><td>3             </td><td>0             </td><td> 8            </td><td>41            </td></tr>
-	<tr><td>March         </td><td>11            </td><td>4             </td><td>0.6363636     </td><td>3             </td><td>0             </td><td> 9            </td><td> 8            </td></tr>
-	<tr><td>Delectington  </td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>3             </td><td>0             </td><td> 9            </td><td> 9            </td></tr>
-	<tr><td>Indecent      </td><td> 5            </td><td>4             </td><td>0.2000000     </td><td>1             </td><td>0             </td><td>10            </td><td> 2            </td></tr>
-	<tr><td>Average Friend</td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0             </td><td>0             </td><td> 0            </td><td>20            </td></tr>
-	<tr><td>ghostmaster   </td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0             </td><td>1             </td><td> 0            </td><td>36            </td></tr>
+	<tr><td>Viridious     </td><td> 7            </td><td>3             </td><td>0.5714286     </td><td>3             </td><td>0             </td><td>10            </td><td>19            </td><td>10            </td></tr>
+	<tr><td>White T Poison</td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>2             </td><td>0             </td><td>25            </td><td>27            </td><td> 0            </td></tr>
+	<tr><td>Blaziernoed   </td><td>10            </td><td>1             </td><td>0.9000000     </td><td>3             </td><td>0             </td><td> 8            </td><td>41            </td><td>20            </td></tr>
+	<tr><td>March         </td><td>11            </td><td>4             </td><td>0.6363636     </td><td>3             </td><td>0             </td><td> 9            </td><td> 8            </td><td>20            </td></tr>
+	<tr><td>Delectington  </td><td> 8            </td><td>2             </td><td>0.7500000     </td><td>3             </td><td>0             </td><td> 9            </td><td> 9            </td><td>13            </td></tr>
+	<tr><td>Indecent      </td><td> 5            </td><td>4             </td><td>0.2000000     </td><td>1             </td><td>0             </td><td>10            </td><td> 2            </td><td> 0            </td></tr>
+	<tr><td>Average Friend</td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0             </td><td>0             </td><td> 0            </td><td>20            </td><td> 4            </td></tr>
+	<tr><td>ghostmaster   </td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0             </td><td>1             </td><td> 0            </td><td>36            </td><td> 0            </td></tr>
 </tbody>
 </table>
 </dd>
 	<dt>$defenseData</dt>
 		<dd><table>
-<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>avg_players_on_spike</th><th scope=col>avg_attack_count</th><th scope=col>avg_spike_duration</th><th scope=col>evaded</th><th scope=col>healed</th></tr></thead>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>avg_players_on_spike</th><th scope=col>avg_attack_count</th><th scope=col>avg_spike_duration</th><th scope=col>evaded</th><th scope=col>healed</th><th scope=col>used_greens</th></tr></thead>
 <tbody>
-	<tr><td>Viridious     </td><td> 7            </td><td>3             </td><td>0.5714286     </td><td>4.000000      </td><td> 8.285714     </td><td>4.627000      </td><td>0.8571429     </td><td>0.7142857     </td></tr>
-	<tr><td>White T Poison</td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>3.000000      </td><td> 6.111111     </td><td>3.673222      </td><td>1.0000000     </td><td>0.3333333     </td></tr>
-	<tr><td>Blaziernoed   </td><td>10            </td><td>1             </td><td>0.9000000     </td><td>3.900000      </td><td> 8.300000     </td><td>3.940900      </td><td>0.8000000     </td><td>0.6000000     </td></tr>
-	<tr><td>March         </td><td>11            </td><td>4             </td><td>0.6363636     </td><td>4.454545      </td><td>10.090909     </td><td>5.653727      </td><td>0.4545455     </td><td>0.8181818     </td></tr>
-	<tr><td>Delectington  </td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>3.888889      </td><td> 7.888889     </td><td>3.546000      </td><td>0.5555556     </td><td>0.7777778     </td></tr>
-	<tr><td>Indecent      </td><td> 5            </td><td>4             </td><td>0.2000000     </td><td>4.000000      </td><td> 7.200000     </td><td>2.562400      </td><td>0.4000000     </td><td>0.6000000     </td></tr>
-	<tr><td>Average Friend</td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>2.000000      </td><td> 2.000000     </td><td>0.414000      </td><td>1.0000000     </td><td>0.0000000     </td></tr>
-	<tr><td>ghostmaster   </td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>2.000000      </td><td> 5.000000     </td><td>3.005000      </td><td>1.0000000     </td><td>0.0000000     </td></tr>
+	<tr><td>Viridious     </td><td> 7            </td><td>3             </td><td>0.5714286     </td><td>4.000000      </td><td> 8.285714     </td><td>4.627000      </td><td>0.8571429     </td><td>0.7142857     </td><td>0.4285714     </td></tr>
+	<tr><td>White T Poison</td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>3.000000      </td><td> 6.111111     </td><td>3.673222      </td><td>1.0000000     </td><td>0.3333333     </td><td>0.0000000     </td></tr>
+	<tr><td>Blaziernoed   </td><td>10            </td><td>1             </td><td>0.9000000     </td><td>3.900000      </td><td> 8.300000     </td><td>3.940900      </td><td>0.8000000     </td><td>0.6000000     </td><td>0.7000000     </td></tr>
+	<tr><td>March         </td><td>11            </td><td>4             </td><td>0.6363636     </td><td>4.454545      </td><td>10.090909     </td><td>5.653727      </td><td>0.4545455     </td><td>0.8181818     </td><td>0.5454545     </td></tr>
+	<tr><td>Delectington  </td><td> 8            </td><td>2             </td><td>0.7500000     </td><td>3.750000      </td><td> 7.750000     </td><td>3.352500      </td><td>0.6250000     </td><td>0.8750000     </td><td>0.5000000     </td></tr>
+	<tr><td>Indecent      </td><td> 5            </td><td>4             </td><td>0.2000000     </td><td>4.000000      </td><td> 7.200000     </td><td>2.562400      </td><td>0.4000000     </td><td>0.6000000     </td><td>0.0000000     </td></tr>
+	<tr><td>Average Friend</td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>2.000000      </td><td> 2.000000     </td><td>0.414000      </td><td>1.0000000     </td><td>0.0000000     </td><td>0.0000000     </td></tr>
+	<tr><td>ghostmaster   </td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>2.000000      </td><td> 5.000000     </td><td>3.005000      </td><td>1.0000000     </td><td>0.0000000     </td><td>0.0000000     </td></tr>
 </tbody>
 </table>
 </dd>
 	<dt>$team_survival_rate</dt>
-		<dd>0.69811320754717</dd>
+		<dd>0.692307692307692</dd>
 	<dt>$team_evade_rate</dt>
-		<dd>0.69811320754717</dd>
+		<dd>0.711538461538462</dd>
 	<dt>$team_heal_rate</dt>
-		<dd>0.622641509433962</dd>
+		<dd>0.634615384615385</dd>
+	<dt>$team_green_rate</dt>
+		<dd>0.384615384615385</dd>
 </dl>
 
 </div>
@@ -13743,7 +13763,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">healing0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupHealing</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span><span class="m">0</span><span class="p">)</span>               <span class="c1">## Healing summary for Team 0</span>
@@ -13771,14 +13791,14 @@ div#notebook {
 <table>
 <thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>on_heal_pct</th><th scope=col>heals_per_spike</th><th scope=col>first_heal_timing</th></tr></thead>
 <tbody>
-	<tr><td>Blazing Doyler    </td><td>10                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>NobGoblin         </td><td> 1                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>Peaks             </td><td>11                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>Drunk Love        </td><td>14                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>Doom Reverb       </td><td> 1                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>Firehawk Maximum  </td><td>10                </td><td>0.0000000         </td><td>     NaN          </td><td>     NaN          </td></tr>
-	<tr><td>We're All Mad Here</td><td> 1                </td><td>0.7058824         </td><td>1.416667          </td><td>2.134917          </td></tr>
-	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0.7843137         </td><td>1.450000          </td><td>1.358075          </td></tr>
+	<tr><td>Blazing Doyler    </td><td>10                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>NobGoblin         </td><td> 1                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>Peaks             </td><td>11                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>Drunk Love        </td><td>14                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>Doom Reverb       </td><td> 1                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>Firehawk Maximum  </td><td> 9                </td><td>0.00              </td><td>     NaN          </td><td>     NaN          </td></tr>
+	<tr><td>We're All Mad Here</td><td> 1                </td><td>0.72              </td><td>1.416667          </td><td>2.134917          </td></tr>
+	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0.78              </td><td>1.461538          </td><td>1.392897          </td></tr>
 </tbody>
 </table>
 
@@ -13800,10 +13820,102 @@ div#notebook {
 	<tr><td>White T Poison</td><td> 9            </td><td>0.00000000    </td><td>     NaN      </td><td>     NaN      </td></tr>
 	<tr><td>Blaziernoed   </td><td>10            </td><td>0.00000000    </td><td>     NaN      </td><td>     NaN      </td></tr>
 	<tr><td>March         </td><td>11            </td><td>0.00000000    </td><td>     NaN      </td><td>     NaN      </td></tr>
-	<tr><td>Delectington  </td><td> 9            </td><td>0.00000000    </td><td>     NaN      </td><td>     NaN      </td></tr>
-	<tr><td>Indecent      </td><td> 5            </td><td>0.05660377    </td><td>1.000000      </td><td>3.336333      </td></tr>
-	<tr><td>Average Friend</td><td> 1            </td><td>0.58490566    </td><td>1.516129      </td><td>2.520258      </td></tr>
-	<tr><td>ghostmaster   </td><td> 1            </td><td>0.60377358    </td><td>1.500000      </td><td>2.367563      </td></tr>
+	<tr><td>Delectington  </td><td> 8            </td><td>0.00000000    </td><td>     NaN      </td><td>     NaN      </td></tr>
+	<tr><td>Indecent      </td><td> 5            </td><td>0.05769231    </td><td>1.000000      </td><td>3.336333      </td></tr>
+	<tr><td>Average Friend</td><td> 1            </td><td>0.59615385    </td><td>1.516129      </td><td>2.520258      </td></tr>
+	<tr><td>ghostmaster   </td><td> 1            </td><td>0.61538462    </td><td>1.500000      </td><td>2.367562      </td></tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Green-Insp-summaries">Green Insp summaries<a class="anchor-link" href="#Green-Insp-summaries">&#182;</a></h3><p>Summaries related to green inspiration usage, added 8/10. Note that this doesn't (and can't) speak to whether the green insp usage was <em>good</em>. Sometimes players don't use greens because the spike was clean. Other times, it might be justified to use 10 greens on a single spike, particularly if it's late in a match. As stated several times, context is important; these metrics don't tell the whole story, but they can be useful.</p>
+<ul>
+<li>targeted, deaths, and survival_rate show up here (same definition as in defensive summaries).</li>
+<li>pct_spikes_greens_used = percentage of spikes against this player where at least 1 green inspiration was used.</li>
+<li>total_greens_used = total green inspirations used by this player - should be close to accurate, maybe not 100%.</li>
+<li>low_on_greens_time = the time <em>in minutes</em> from the start of the match when the player ran low on greens. Right now this is hard-coded to be greenMax (default 20) minus 2, i.e. after using 18 greens.</li>
+<li>spikes_while_low = number of spikes attempted on the target after they became low on greens.</li>
+<li>avg_greens_per_spike = average number of greens popped per spike (simply total_greens_used / targeted).</li>
+<li>avg_greens_per_spike_before_low = same as above, but only using data from before the player became low on greens. Why is this useful? If someone pops (e.g.) 8 greens per spike and runs out early in the match as a result, this will show overuse as a possible issue. </li>
+</ul>
+<p>Players may use &gt; 20 greens per match if they get a green inspiration drop from a kill. greenMax is a parameter for this function which basically tells the program to assume everyone starts with 20 greens. In certain scenarios this could be adjusted downward, or it could even be used as a shortcut way to adjust the definition of "low" on inspirations. For example, greenMax=18 makes it so that hitting 16 greens used is the new definition of "low on greens."</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-r"><pre><span></span><span class="n">greens0</span><span class="o">&lt;-</span><span class="nf">analyzeGroupGreens</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="n">greenMax</span><span class="o">=</span><span class="m">20</span><span class="p">)</span>   <span class="c1">## Green insp summary for Team 0 (added 8/10)</span>
+<span class="n">greens1</span><span class="o">&lt;-</span><span class="nf">analyzeGroupGreens</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="n">greenMax</span><span class="o">=</span><span class="m">20</span><span class="p">)</span>   <span class="c1">## Green insp summary for Team 1 (added 8/10)</span>
+
+<span class="n">greens0</span>
+<span class="n">greens1</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+
+<div class="output_html rendered_html output_subarea ">
+<table>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>pct_spikes_greens_used</th><th scope=col>total_greens_used</th><th scope=col>low_on_greens_time</th><th scope=col>spikes_while_low</th><th scope=col>avg_greens_per_spike</th><th scope=col>avg_greens_per_spike_before_low</th></tr></thead>
+<tbody>
+	<tr><td>Blazing Doyler    </td><td>10                </td><td>3                 </td><td>0.7000000         </td><td>0.6000000         </td><td>11                </td><td>      NA          </td><td>0                 </td><td>1.100000          </td><td>1.100000          </td></tr>
+	<tr><td>NobGoblin         </td><td> 1                </td><td>1                 </td><td>0.0000000         </td><td>0.0000000         </td><td> 0                </td><td>      NA          </td><td>0                 </td><td>0.000000          </td><td>0.000000          </td></tr>
+	<tr><td>Peaks             </td><td>11                </td><td>4                 </td><td>0.6363636         </td><td>0.5454545         </td><td>14                </td><td>      NA          </td><td>0                 </td><td>1.272727          </td><td>1.272727          </td></tr>
+	<tr><td>Drunk Love        </td><td>14                </td><td>3                 </td><td>0.7857143         </td><td>0.4285714         </td><td>20                </td><td>6.652717          </td><td>5                 </td><td>1.428571          </td><td>2.000000          </td></tr>
+	<tr><td>Doom Reverb       </td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>0.0000000         </td><td> 0                </td><td>      NA          </td><td>0                 </td><td>0.000000          </td><td>0.000000          </td></tr>
+	<tr><td>Firehawk Maximum  </td><td> 9                </td><td>5                 </td><td>0.4444444         </td><td>0.4444444         </td><td>12                </td><td>      NA          </td><td>0                 </td><td>1.333333          </td><td>1.333333          </td></tr>
+	<tr><td>We're All Mad Here</td><td> 1                </td><td>0                 </td><td>1.0000000         </td><td>0.0000000         </td><td> 0                </td><td>      NA          </td><td>0                 </td><td>0.000000          </td><td>0.000000          </td></tr>
+	<tr><td>Call Her Daddy    </td><td> 3                </td><td>0                 </td><td>1.0000000         </td><td>0.0000000         </td><td> 0                </td><td>      NA          </td><td>0                 </td><td>0.000000          </td><td>0.000000          </td></tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+
+<div class="output_html rendered_html output_subarea ">
+<table>
+<thead><tr><th scope=col>name</th><th scope=col>targeted</th><th scope=col>deaths</th><th scope=col>survival_rate</th><th scope=col>pct_spikes_greens_used</th><th scope=col>total_greens_used</th><th scope=col>low_on_greens_time</th><th scope=col>spikes_while_low</th><th scope=col>avg_greens_per_spike</th><th scope=col>avg_greens_per_spike_before_low</th></tr></thead>
+<tbody>
+	<tr><td>Viridious     </td><td> 7            </td><td>3             </td><td>0.5714286     </td><td>0.4285714     </td><td>10            </td><td>      NA      </td><td>0             </td><td>1.428571      </td><td>1.428571      </td></tr>
+	<tr><td>White T Poison</td><td> 9            </td><td>2             </td><td>0.7777778     </td><td>0.0000000     </td><td> 0            </td><td>      NA      </td><td>0             </td><td>0.000000      </td><td>0.000000      </td></tr>
+	<tr><td>Blaziernoed   </td><td>10            </td><td>1             </td><td>0.9000000     </td><td>0.7000000     </td><td>20            </td><td>9.525567      </td><td>1             </td><td>2.000000      </td><td>2.000000      </td></tr>
+	<tr><td>March         </td><td>11            </td><td>4             </td><td>0.6363636     </td><td>0.5454545     </td><td>20            </td><td>6.467100      </td><td>4             </td><td>1.818182      </td><td>2.571429      </td></tr>
+	<tr><td>Delectington  </td><td> 8            </td><td>2             </td><td>0.7500000     </td><td>0.5000000     </td><td>13            </td><td>      NA      </td><td>0             </td><td>1.625000      </td><td>1.625000      </td></tr>
+	<tr><td>Indecent      </td><td> 5            </td><td>4             </td><td>0.2000000     </td><td>0.0000000     </td><td> 0            </td><td>      NA      </td><td>0             </td><td>0.000000      </td><td>0.000000      </td></tr>
+	<tr><td>Average Friend</td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0.0000000     </td><td> 4            </td><td>      NA      </td><td>0             </td><td>4.000000      </td><td>4.000000      </td></tr>
+	<tr><td>ghostmaster   </td><td> 1            </td><td>0             </td><td>1.0000000     </td><td>0.0000000     </td><td> 0            </td><td>      NA      </td><td>0             </td><td>0.000000      </td><td>0.000000      </td></tr>
 </tbody>
 </table>
 
@@ -13974,7 +14086,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="nf">names</span><span class="p">(</span><span class="nf">analyzePlayerOffense</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="s">&quot;Doom Reverb&quot;</span><span class="p">))</span> <span class="c1">## See what is contained in the analyzePlayerOffense output</span>
@@ -14004,6 +14116,7 @@ div#notebook {
 	<li>'first_attack_timing'</li>
 	<li>'first_attack_rank'</li>
 	<li>'first_timing_distance'</li>
+	<li>'abs_timing_distance'</li>
 	<li>'chain_duration'</li>
 	<li>'chain_table'</li>
 </ol>
@@ -14030,10 +14143,10 @@ div#notebook {
 	<tr><td>Blaze-Dominate-Blazing Bolt-Corrosive</td><td> 3                                   </td></tr>
 	<tr><td>Blaze-Dominate-Corrosive             </td><td> 2                                   </td></tr>
 	<tr><td>Blazing Bolt                         </td><td> 2                                   </td></tr>
-	<tr><td>Dominate                             </td><td> 2                                   </td></tr>
 	<tr><td>Dominate-Blazing Bolt                </td><td> 2                                   </td></tr>
 	<tr><td>Blaze-Corrosive-Blazing Bolt         </td><td> 1                                   </td></tr>
 	<tr><td>Corrosive-Blaze                      </td><td> 1                                   </td></tr>
+	<tr><td>Dominate                             </td><td> 1                                   </td></tr>
 </tbody>
 </table>
 
@@ -14161,10 +14274,11 @@ div#notebook {
                                     <span class="s">&quot;Disintegrate&quot;</span><span class="p">,</span><span class="s">&quot;Ice Blast&quot;</span><span class="p">,</span> <span class="s">&quot;Freeze Ray&quot;</span><span class="p">,</span><span class="s">&quot;Bitter Freeze Ray&quot;</span><span class="p">,</span><span class="s">&quot;Enervating Field&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Mesmerize&quot;</span><span class="p">,</span><span class="s">&quot;Zapp&quot;</span><span class="p">,</span> <span class="s">&quot;Spirit Shark Jaws&quot;</span><span class="p">,</span><span class="s">&quot;Shriek&quot;</span><span class="p">,</span><span class="s">&quot;Scream&quot;</span><span class="p">,</span><span class="s">&quot;Shout&quot;</span><span class="p">,</span><span class="s">&quot;Screech&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Power Push&quot;</span><span class="p">,</span><span class="s">&quot;Energy Snipe&quot;</span><span class="p">,</span><span class="s">&quot;Will Domination&quot;</span><span class="p">,</span><span class="s">&quot;Telekinetic Blast&quot;</span><span class="p">,</span><span class="s">&quot;Subdue&quot;</span><span class="p">,</span>
-                                    <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">),</span>
+                                    <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">,</span><span class="s">&quot;Force Bolt&quot;</span><span class="p">,</span>
+                                    <span class="s">&quot;Cosmic Burst&quot;</span><span class="p">,</span><span class="s">&quot;Proton Volley&quot;</span><span class="p">,</span><span class="s">&quot;X-Ray Beam&quot;</span><span class="p">),</span>
                       <span class="n">healset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Absorb Pain&quot;</span><span class="p">,</span><span class="s">&quot;Heal Other&quot;</span><span class="p">,</span><span class="s">&quot;Aid Other&quot;</span><span class="p">,</span><span class="s">&quot;Spirit Ward&quot;</span><span class="p">,</span><span class="s">&quot;Insulating Circuit&quot;</span><span class="p">,</span>
                                   <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">,</span> <span class="s">&quot;Soothe&quot;</span><span class="p">,</span> <span class="s">&quot;Share Pain&quot;</span><span class="p">),</span>
-                      <span class="n">evadeset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Phase Shift&quot;</span><span class="p">,</span><span class="s">&quot;Hibernate&quot;</span><span class="p">,</span><span class="s">&quot;Jaunt&quot;</span><span class="p">,</span><span class="s">&quot;Raptor or Fly&quot;</span><span class="p">),</span> <span class="c1">## add Dim Shift?</span>
+                      <span class="n">evadeset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Phase Shift&quot;</span><span class="p">,</span><span class="s">&quot;Hibernate&quot;</span><span class="p">,</span><span class="s">&quot;Jaunt&quot;</span><span class="p">,</span><span class="s">&quot;Raptor or Fly&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">),</span> <span class="c1">## add Dim Shift?</span>
                       <span class="n">otherset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Crey Pistol&quot;</span><span class="p">,</span><span class="s">&quot;Net Arrow&quot;</span><span class="p">,</span><span class="s">&quot;Weaken&quot;</span><span class="p">,</span><span class="s">&quot;Confuse or Deceive&quot;</span><span class="p">,</span><span class="s">&quot;Regrowth&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Shock&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span><span class="s">&quot;Transference&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Siphon Speed&quot;</span><span class="p">),</span>
@@ -14174,8 +14288,10 @@ div#notebook {
                                   <span class="s">&quot;Absorb Pain&quot;</span><span class="p">,</span><span class="s">&quot;Heal Other&quot;</span><span class="p">,</span><span class="s">&quot;Aid Other&quot;</span><span class="p">,</span><span class="s">&quot;Spirit Ward&quot;</span><span class="p">,</span><span class="s">&quot;Insulating Circuit&quot;</span><span class="p">,</span>
                                   <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">),</span>
                       <span class="n">spikeWindow</span><span class="o">=</span><span class="m">3.5</span><span class="p">,</span> <span class="n">min_attacks_per_spike</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">max_time_per_spike_sec</span><span class="o">=</span><span class="m">11</span><span class="p">,</span> <span class="n">hitSupportCredit</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span>
-                      <span class="n">healWindow</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">preEvadeWindow</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="m">1</span><span class="p">),</span>
-                      <span class="n">customStart</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span><span class="n">customEnd</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span> <span class="n">checkEntities</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> <span class="n">expectedPlayers</span><span class="o">=</span><span class="m">16</span><span class="p">,</span>
+                      <span class="n">healWindow</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">preEvadeWindow</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> <span class="n">greenMax</span><span class="o">=</span><span class="m">20</span><span class="p">,</span>
+                      <span class="n">smartStart</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> <span class="n">smartEnd</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span> <span class="n">customStart</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span> <span class="n">customEnd</span><span class="o">=</span><span class="kc">NULL</span><span class="p">,</span> <span class="n">checkEntities</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span>
+                      <span class="n">suppsTeam0</span><span class="o">=</span><span class="m">2</span><span class="p">,</span> <span class="n">suppsTeam1</span><span class="o">=</span><span class="m">2</span><span class="p">,</span>
+                      <span class="n">expectedPlayers</span><span class="o">=</span><span class="m">16</span><span class="p">,</span>
                       <span class="n">emotePolice</span><span class="o">=</span><span class="kc">TRUE</span><span class="p">,</span>
                       <span class="n">textset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;FIREBALL.FX&quot;</span><span class="p">,</span> <span class="s">&quot;SOOT.FX&quot;</span><span class="p">,</span> <span class="s">&quot;INFERNOBOLT.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;FIREBLASTAIM.FX&quot;</span><span class="p">,</span> <span class="s">&quot;FIREBOLT.FX&quot;</span><span class="p">,</span> <span class="s">&quot;FLARES.FX&quot;</span><span class="p">,</span><span class="s">&quot;XXLARGEFIREBALL.FX&quot;</span><span class="p">,</span> <span class="s">&quot;INFERNO.FX&quot;</span><span class="p">,</span>
@@ -14211,7 +14327,9 @@ div#notebook {
                                    <span class="s">&quot;KININERTIALREDUCTIONS.FX&quot;</span><span class="p">,</span><span class="s">&quot;WILLDOMINATION.FX&quot;</span><span class="p">,</span><span class="s">&quot;TELEKINETICBLAST.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;SUBDUEPSIONICBLAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PSIBLAST_SLOWERCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PSIONICLANCEBLASTQUICK.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;PSIONICBLAST_SLOWCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFUSION.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFERENCE.FX&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;SOOTH_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;SHAREPAIN_ATTACK.FX&quot;</span><span class="p">),</span>
+                                   <span class="s">&quot;SOOTH_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;SHAREPAIN_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;FORCEBOLT.FX&quot;</span><span class="p">,</span><span class="s">&quot;/STAMINA.FX&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;RADIATIONBLASTAIM.FX&quot;</span><span class="p">,</span><span class="s">&quot;COSMICBLAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PROTONBLAST_QUICK.FX&quot;</span><span class="p">,</span>
+                                   <span class="s">&quot;XRAYBEAM.FX&quot;</span><span class="p">,</span><span class="s">&quot;BURSTOFSPEED.FX&quot;</span><span class="p">),</span>
                       
                       <span class="n">powerset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span> <span class="s">&quot;Char&quot;</span><span class="p">,</span> <span class="s">&quot;Blazing Bolt&quot;</span><span class="p">,</span> <span class="s">&quot;Aim&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Blast&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Flares&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Ball&quot;</span><span class="p">,</span> <span class="s">&quot;Inferno&quot;</span><span class="p">,</span> <span class="s">&quot;Super Jump&quot;</span><span class="p">,</span> <span class="s">&quot;Geas&quot;</span><span class="p">,</span> <span class="s">&quot;Burst of Speed&quot;</span><span class="p">,</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span>
@@ -14234,7 +14352,8 @@ div#notebook {
                                     <span class="s">&quot;Net Arrow&quot;</span><span class="p">,</span><span class="s">&quot;Siphon Speed&quot;</span><span class="p">,</span><span class="s">&quot;Speed Boost&quot;</span><span class="p">,</span><span class="s">&quot;Increase Density&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span><span class="s">&quot;Will Domination&quot;</span><span class="p">,</span><span class="s">&quot;Telekinetic Blast&quot;</span><span class="p">,</span><span class="s">&quot;Subdue&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span>
-                                    <span class="s">&quot;Transference&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">))</span>
+                                    <span class="s">&quot;Transference&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">,</span><span class="s">&quot;Force Bolt&quot;</span><span class="p">,</span><span class="s">&quot;Green Insp&quot;</span><span class="p">,</span>
+                                    <span class="s">&quot;Aim&quot;</span><span class="p">,</span><span class="s">&quot;Cosmic Burst&quot;</span><span class="p">,</span><span class="s">&quot;Proton Volley&quot;</span><span class="p">,</span><span class="s">&quot;X-Ray Beam&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">))</span>
 </pre></div>
 
     </div>
@@ -14257,12 +14376,17 @@ div#notebook {
 <li><strong>spikeWindow</strong> : time <em>in seconds</em> before a series of attacks aimed at a particular player is no longer counted as part of the same spike. Default 3.5. What this means is that if Target X goes 3.5 seconds without <em>anyone</em> on the other team firing an attack at them, then the spike is over. If even one player continues firing at Target X within 3.5 seconds of anyone's previous attack, then the spike continues, up to a limit of max_time_per_spike_sec (below).</li>
 <li><strong>min_attacks_per_spike</strong> : minimum number of attacks that must be fired at a player in order for it to count as a spike attempt. Default 2. There are exceptions to this (see below).</li>
 <li><strong>max_time_per_spike_sec</strong> : maximum time <em>in seconds</em> that a spike can last. Default 11. If someone keeps extending the spikeWindow by continuously hitting a target, then a new spike will begin after 11 seconds. In practice, this has not happened often, given that most teams are not currently roguing, but roguing could mess with this system. This is intended to catch "re-call" spikes as being separate, which it does fairly well.</li>
-<li><strong>hitSupportCredit</strong> : logical indicator for whether hitting a "support" during a spike window still counts as being "on spike" even if that support is not the target. Default TRUE. Why? Sometimes forcing evasion or mezzing a support during a spike can contribute to the spike's success. Currently, "supports" are <strong>automatically</strong> defined as the <strong>two</strong> players on each team who use the fewest powers from attackset. This is done deeper in the code but could be reworked to feed in the support names via parameters.</li>
+<li><strong>hitSupportCredit</strong> : logical indicator for whether hitting a "support" during a spike window still counts as being "on spike" even if that support is not the target. Default TRUE. Why? Sometimes forcing evasion or mezzing a support during a spike can contribute to the spike's success. Currently, "supports" are <strong>automatically</strong> defined as the <strong>two</strong> players on each team who use the fewest powers from attackset ("two" is now controlled by suppsTeam0 and suppsTeam1; see below). This is done deeper in the code but could be reworked to feed in the support names via parameters.</li>
 <li><strong>healWindow</strong> : in order to be counted as being in response to a spike, heals must be attempted between the spike's start time (first attack) and the spike's end time (when the last attack of the spike is <em>fired</em>), plus healWindow seconds. Default 2.</li>
 <li><strong>preEvadeWindow</strong> : a window of time that allows spikes to be counted (and specifically, counted as evaded) <em>even if they do not meet the min_attacks_per_spike requirement</em>. Default is c(-2, 1) which means that if a player takes an evasive action like Jaunt anywhere from 2 seconds before, to 1 second after, the first attack in a spike... the spike will be counted regardless of min_attacks_per_spike settings. A few notes: 1) there is probably no good way to count pre-evasions that result in 0 attacks fired, and 2) in order to count as an evasion, there's also a <strong>hard-coded</strong> maximum limit of 2 seconds after the last attack in the spike is fired (similar to healWindow above, but it's hard-coded, rather than a parameter). This will occasionally pick up an extra spike that isn't really a spike. However, <em>there is no surefire way to give credit to evasions involving only 1-2 attacks without at least sometimes counting an extra spike,</em> so it's up to the user. Consistency across matches is more important than worrying about which error to favor.</li>
-<li><strong>customStart</strong> : time <em>in seconds</em> after the start of demo recording when data should actually be tracked. Default NULL, which means that the demo tracks everything from the moment recording begins. If you know you started recording at exactly 0:15 until match begins, and you don't want to track any pre-match buffs, you could set this to 15.</li>
-<li><strong>customEnd</strong> : time <em>in seconds</em> after which all demo information is ignored and the match is considered over. Default NULL, which means that the demo will either track data until a teammate (team 0) leaves the game after 10 minutes of recording, or until the demo ends if no teammate is seen leaving the match. However, if you know the match lasted for exactly 615 seconds of demo recording - e.g. because you started recording at exactly 0:15 until match begins - then you could supply 615 as the value.</li>
+<li><strong>greenMax</strong> : assumed number of green inspirations that players bring into the match, default 20. This is used to help determine how many green inspirations a player has in their tray each time they are spiked.</li>
+<li><strong>smartStart</strong> : indicates whether to use "smart" starting for match tracking, added 8/10, default TRUE. This starts power usage tracking 1 second before the first player jump movement, which typically signals that the match has started, so pre-match buffs will be cut out of the tracking.</li>
+<li><strong>smartEnd</strong> : indicates whether to use "smart" ending for match tracking, added 8/10, default TRUE. This turns power usage (and kill/death) tracking off 10 minutes and 1 second after the match starts. When used in conjunction with smartStart, this should make scores and power tracking more accurate.</li>
+<li><strong>customStart</strong> : time <em>in seconds</em> after the start of demo recording when data should actually be tracked. Default NULL, which means that the demo tracks everything from the moment recording begins. If you know you started recording at exactly 0:15 until match begins, and you don't want to track any pre-match buffs, you could set this to 15. This will override smartStart.</li>
+<li><strong>customEnd</strong> : time <em>in seconds</em> after which all demo information is ignored and the match is considered over. Default NULL, which means that the demo will either track data until a teammate (team 0) leaves the game after 10 minutes of recording, or until the demo ends if no teammate is seen leaving the match. However, if you know the match lasted for exactly 615 seconds of demo recording - e.g. because you started recording at exactly 0:15 until match begins - then you could supply 615 as the value. This will override smartEnd.</li>
 <li><strong>checkEntities</strong> : logical indicator for whether users should be prompted to confirm the players / teams are correct. If they are not, then the user is given the option to identify players and teams directly. Default TRUE. Can be turned to FALSE for demos that have been successfully parsed before or where entity mismatches are unlikely.</li>
+<li><strong>suppsTeam0</strong> : indicates how many "pure supports" are on whichever team ends up being defined as Team 0, default 2. Added 8/10. This is only used in conjunction with hitSupportCredit for guessing who the supports are. Only works for integer values from 0 to 3.</li>
+<li><strong>suppsTeam1</strong> : see above, but for Team 1.</li>
 <li><strong>expectedPlayers</strong> : number of players expected in the match. Default 16, corresponding to 8v8. If the number of tracked entities is not equal to this value after checking entities, then the function will return an error code.</li>
 <li><strong>emotePolice</strong> : logical indicator for whether to track emote usage by players. Default TRUE. This is an incredibly basic function that only returns what emotes were used; there are some built-in definitions for emote canceling like calling out usage of /em liedown or /em shocked, as well as one that calls out /em holdtorch (a non-canceling emote) as probably just being me messing around at the start of the match.</li>
 <li><strong>textset</strong> and <strong>powerset</strong> : sets of power activation effect names and corresponding power names (which are then used by attackset, healset, etc.). These are 1-to-1, and ordering matters, so if you add to textset, you should add to powerset in the same order. You will need to add to these sets if there are any new powers I haven't already captured, like the examples of Dark Blast and Pain that I gave earlier. Note that because I am allowing "any" matches to the text rather than exact matches, it is technically safest to start with the / in the FX name like /ARROW_NET.FX because otherwise there can be duplicate matches. POISONLIQUIDPROJECTILE.FX would actually cover both Weaken <em>and</em> Envenom, which are PALMPOISONLIQUIDPROJECTILE.FX and POISONLIQUIDPROJECTILE.FX respectively, so I use /POISONLIQUIDPROJECTILE.FX for Envenom to differentiate it.</li>
@@ -14329,7 +14453,9 @@ div#notebook {
 <li><strong>analyzeGroupOffense(parseOut, teamNum)</strong> : e.g. analyzeGroupOffense(out1, 0). Pulls some of the metrics from analyzePlayerOffense into tables for the entire team (0 or 1).</li>
 <li><strong>analyzeCustomGroupOffense(parseOut, name1, name2, name3 ... )</strong> : similar to analyzeGroupOffense, but instead of a team, it lets you feed in up to 8 names (must supply at least name1 and name2), which could be on opposite teams, to get summaries.</li>
 <li><strong>analyzePlayerHealing , analyzeGroupHealing , analyzeCustomGroupHealing</strong> : see above, same idea.</li>
-<li><strong>analyzeGroupDefense(parseOut, teamNum, evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly"))</strong> : defensive information (deaths, targets, evasive powers used) is more compact and straightforward than offensive or healing data, so I only made a group summary function that returns several outputs in a list: powerUsage shows uses of the evadeset powers, defenseData shows some detailed information, and then team_survival_rate, team_evade_rate, and team_heal_rate are returned (as explained in notes up above).</li>
+<li><strong>analyzeGroupDefense(parseOut, teamNum, defenseset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed","Green Insp"))</strong> : defensive information (deaths, targets, evasive powers used) is more compact and straightforward than offensive or healing data, so I only made a group summary function that returns several outputs in a list: powerUsage shows uses of the defenseset powers, defenseData shows some detailed information, and then team_survival_rate, team_evade_rate, team_heal_rate, and team_green_rate are returned (as explained in notes up above).</li>
+<li><strong>analyzePlayerGreens(parseOut, name, greenMax=20)</strong> : e.g. analyzePlayerGreens(out1, "Doom Reverb"). Added 8/10. Returns some useful metrics noted above, as well as "greens_by_time" which is a table showing how many greens the player had left at minute 1, minute 2, and so forth (along with how many times they had been targeted by then).</li>
+<li><strong>analyzeGroupGreens(parseOut, teamNum)</strong> : e.g. analyzeGroupGreens(out1, 0). Added 8/10. Pulls some of the metrics from analyzePlayerGreens into tables for the entire team (0 or 1).</li>
 </ul>
 
 </div>
