@@ -79,10 +79,11 @@ analyzePlayerHealing <- function(parseOut,name){
   }
   return(list(rawData = playerOut,
               targeted = targset[which(targset$Name==name),"ApproxTargeted"],
-              on_heal_pct = mean(playerOut$on_heal),
+              on_heal_pct = mean(playerOut[which(playerOut$target != name),"on_heal"]),
               heals_per_spike = mean(playerOut$heal_count,na.rm=TRUE),
               first_heal_timing = mean(playerOut$first_heal_timing,na.rm=TRUE),
-              chain_table = sort(table(playerOut$heal_combo,exclude=NULL), decreasing = TRUE)))
+              chain_table = sort(table(playerOut[which(playerOut$target != name),"heal_combo"],exclude=NULL),
+                                 decreasing = TRUE)))
 }
 
 

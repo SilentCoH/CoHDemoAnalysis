@@ -13108,6 +13108,7 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
+<li>8/11/20 - minor tweak to the analysis of healing functions - "on_heal_pct" stat now excludes spikes where the person in question was the target (e.g. emps cannot Heal Other / Absorb Pain themselves, so they shouldn't see on_heal_pct rates suffer when they are the target).</li>
 <li>8/10/20 - added analysis of green inspirations, "smart" start and end of match detection (on by default), a few more outputs like map name and duration of ability tracking (should be 10 minutes 1 second by default with smart start and end of match detection), abs_timing_distance as an offensive statistic. Search for 8/10 in the rest of this document in order to see some notes that I integrated on these features.</li>
 <li>8/4/20 - revamped entity detection (which was the oldest, laziest part of the code) so that the demo should work fairly well for participant and spectator demos alike. This means the exclNames parameter is likely obsolete. Also revamped team assignment based on something suggested in xhiggy and mjb's code - thank you! Finally, I added customStart as an optional parameter, with similar functionality to customEnd.</li>
 </ul>
@@ -13752,8 +13753,8 @@ div#notebook {
 <h3 id="Healing-summaries">Healing summaries<a class="anchor-link" href="#Healing-summaries">&#182;</a></h3><p>Very similar idea to the offensive summaries:</p>
 <ul>
 <li>targeted still shows up here. Again, it's very important context.</li>
-<li>on_heal_pct = percentage of spikes against this team where the player attempted a healing power. Keep in mind the team-wide evasion rates; higher rates of evasion mean the healers will need to be on target less often.</li>
-<li>heals_per_spike = average number of healing powers fired per spike.</li>
+<li>on_heal_pct = percentage of spikes against this team where the player attempted a healing power. Keep in mind the team-wide evasion rates; higher rates of evasion mean the healers will need to be on target less often. <strong>UPDATE 8/11</strong>: the denominator for this statistic now excludes spikes where this particular healer was the target since they cannot use Heal Other-like powers on themselves. For example, if someone heals on 30 out of 55 spikes, but was the target of 5 of those 55 spikes, their on_heal_pct will be 30/50 (60%) instead of 30/55.</li>
+<li>heals_per_spike = average number of healing powers fired per spike (when they were on spike with a heal).</li>
 <li>first_heal_timing = average time <em>in seconds</em> after the spike began that the player activated a heal.</li>
 </ul>
 <p>There is more work that could be done here. Admittedly, I haven't fleshed out this part too much. Note that it will catch "off-healers" too, e.g. Indecent using an Elec Affinity power on spike at one point, but this part of the code only captures powers used in the vicinity of a spike. If you want to see what players are using <em>between</em> spikes, see the Power Summary below.</p>
