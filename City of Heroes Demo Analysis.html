@@ -13108,6 +13108,7 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
+<li>8/13/20 - added a few powers.</li>
 <li>8/11/20 - minor tweak to the analysis of healing functions - "on_heal_pct" stat now excludes spikes where the person in question was the target (e.g. emps cannot Heal Other / Absorb Pain themselves, so they shouldn't see on_heal_pct rates suffer when they are the target).</li>
 <li>8/10/20 - added analysis of green inspirations, "smart" start and end of match detection (on by default), a few more outputs like map name and duration of ability tracking (should be 10 minutes 1 second by default with smart start and end of match detection), abs_timing_distance as an offensive statistic. Search for 8/10 in the rest of this document in order to see some notes that I integrated on these features.</li>
 <li>8/4/20 - revamped entity detection (which was the oldest, laziest part of the code) so that the demo should work fairly well for participant and spectator demos alike. This means the exclNames parameter is likely obsolete. Also revamped team assignment based on something suggested in xhiggy and mjb's code - thank you! Finally, I added customStart as an optional parameter, with similar functionality to customEnd.</li>
@@ -13145,13 +13146,13 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Mostly because it's incomplete. I've built it to handle situations I've seen while recording <strong>first person</strong> demos (i.e. as one of the participants in the 8v8 match) over the past few weeks, but during that time I:</p>
+<p>Mostly because it's incomplete. I've built it to handle many situations, but for example, I:</p>
 <ul>
 <li>Never ran into someone using the Dark Blast set (or many other sets for which I haven't grabbed .FX yet)</li>
-<li>Only rarely attempted to use this for anything less than 8v8s (I have parameters to make this work, but it's only been lightly tested)</li>
+<li>Only rarely attempted to use this for anything less than 8v8s (I have parameters to make this work which have been tested successfully on 5v5s and 7v7s)</li>
 <li>etc.</li>
 </ul>
-<p>...so you could easily need to add to it. Alternatively, if this is hosted on github, other users or I could periodically add these features when they arise and update the code.</p>
+<p>...so you could easily need to add to it. However, in most situations, this only consists of modifying some of the default parameters - you can add powers or change the number of expected players this way - rather than needing to edit the code.</p>
 
 </div>
 </div>
@@ -14092,6 +14093,9 @@ div#notebook {
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="nf">names</span><span class="p">(</span><span class="nf">analyzePlayerOffense</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="s">&quot;Doom Reverb&quot;</span><span class="p">))</span> <span class="c1">## See what is contained in the analyzePlayerOffense output</span>
 <span class="nf">as.data.frame</span><span class="p">(</span><span class="nf">analyzePlayerOffense</span><span class="p">(</span><span class="n">out1</span><span class="p">,</span> <span class="s">&quot;Doom Reverb&quot;</span><span class="p">)</span><span class="o">$</span><span class="n">chain_table</span><span class="p">)</span> <span class="c1">## Use as.data.frame so it stacks vertically</span>
+<span class="c1">## Note that if you call as.data.frame on the player offense output for someone who never used any attacks on spikes,</span>
+<span class="c1">## e.g. some support roles, it will return an error. If you are looking to export chain_table output, you may</span>
+<span class="c1">## want some logic to first check whether the player in question fired any attack chains on spikes at all.</span>
 </pre></div>
 
     </div>
@@ -14279,10 +14283,10 @@ div#notebook {
                                     <span class="s">&quot;Cosmic Burst&quot;</span><span class="p">,</span><span class="s">&quot;Proton Volley&quot;</span><span class="p">,</span><span class="s">&quot;X-Ray Beam&quot;</span><span class="p">),</span>
                       <span class="n">healset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Absorb Pain&quot;</span><span class="p">,</span><span class="s">&quot;Heal Other&quot;</span><span class="p">,</span><span class="s">&quot;Aid Other&quot;</span><span class="p">,</span><span class="s">&quot;Spirit Ward&quot;</span><span class="p">,</span><span class="s">&quot;Insulating Circuit&quot;</span><span class="p">,</span>
                                   <span class="s">&quot;Rejuvenating Circuit&quot;</span><span class="p">,</span> <span class="s">&quot;Soothe&quot;</span><span class="p">,</span> <span class="s">&quot;Share Pain&quot;</span><span class="p">),</span>
-                      <span class="n">evadeset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Phase Shift&quot;</span><span class="p">,</span><span class="s">&quot;Hibernate&quot;</span><span class="p">,</span><span class="s">&quot;Jaunt&quot;</span><span class="p">,</span><span class="s">&quot;Raptor or Fly&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">),</span> <span class="c1">## add Dim Shift?</span>
+                      <span class="n">evadeset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Phase Shift&quot;</span><span class="p">,</span><span class="s">&quot;Hibernate&quot;</span><span class="p">,</span><span class="s">&quot;Jaunt&quot;</span><span class="p">,</span><span class="s">&quot;Raptor or Fly&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">,</span><span class="s">&quot;Dim Shift&quot;</span><span class="p">),</span>
                       <span class="n">otherset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Crey Pistol&quot;</span><span class="p">,</span><span class="s">&quot;Net Arrow&quot;</span><span class="p">,</span><span class="s">&quot;Weaken&quot;</span><span class="p">,</span><span class="s">&quot;Confuse or Deceive&quot;</span><span class="p">,</span><span class="s">&quot;Regrowth&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Shock&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span><span class="s">&quot;Transference&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;Siphon Speed&quot;</span><span class="p">),</span>
+                                   <span class="s">&quot;Siphon Speed&quot;</span><span class="p">,</span><span class="s">&quot;Inferno&quot;</span><span class="p">,</span><span class="s">&quot;Aid Self&quot;</span><span class="p">),</span>
                       <span class="n">buffset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Empowering Circuit&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Energizing Circuit&quot;</span><span class="p">,</span><span class="s">&quot;Amp Up&quot;</span><span class="p">,</span><span class="s">&quot;Healing Aura&quot;</span><span class="p">,</span><span class="s">&quot;Fort or AB&quot;</span><span class="p">,</span><span class="s">&quot;Clear Mind&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;Speed Boost&quot;</span><span class="p">,</span><span class="s">&quot;Increase Density&quot;</span><span class="p">,</span><span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span>
@@ -14330,7 +14334,7 @@ div#notebook {
                                    <span class="s">&quot;PSIONICBLAST_SLOWCAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFUSION.FX&quot;</span><span class="p">,</span><span class="s">&quot;KINTRANSFERENCE.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;SOOTH_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;SHAREPAIN_ATTACK.FX&quot;</span><span class="p">,</span><span class="s">&quot;FORCEBOLT.FX&quot;</span><span class="p">,</span><span class="s">&quot;/STAMINA.FX&quot;</span><span class="p">,</span>
                                    <span class="s">&quot;RADIATIONBLASTAIM.FX&quot;</span><span class="p">,</span><span class="s">&quot;COSMICBLAST.FX&quot;</span><span class="p">,</span><span class="s">&quot;PROTONBLAST_QUICK.FX&quot;</span><span class="p">,</span>
-                                   <span class="s">&quot;XRAYBEAM.FX&quot;</span><span class="p">,</span><span class="s">&quot;BURSTOFSPEED.FX&quot;</span><span class="p">),</span>
+                                   <span class="s">&quot;XRAYBEAM.FX&quot;</span><span class="p">,</span><span class="s">&quot;BURSTOFSPEED.FX&quot;</span><span class="p">,</span><span class="s">&quot;GCDIMENSIONSHIFT.FX&quot;</span><span class="p">,</span><span class="s">&quot;AIDSELF_ATTACK.FX&quot;</span><span class="p">),</span>
                       
                       <span class="n">powerset</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span> <span class="s">&quot;Char&quot;</span><span class="p">,</span> <span class="s">&quot;Blazing Bolt&quot;</span><span class="p">,</span> <span class="s">&quot;Aim&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Blast&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Flares&quot;</span><span class="p">,</span> <span class="s">&quot;Fire Ball&quot;</span><span class="p">,</span> <span class="s">&quot;Inferno&quot;</span><span class="p">,</span> <span class="s">&quot;Super Jump&quot;</span><span class="p">,</span> <span class="s">&quot;Geas&quot;</span><span class="p">,</span> <span class="s">&quot;Burst of Speed&quot;</span><span class="p">,</span><span class="s">&quot;Blaze&quot;</span><span class="p">,</span>
@@ -14354,7 +14358,8 @@ div#notebook {
                                     <span class="s">&quot;Inertial Reduction&quot;</span><span class="p">,</span><span class="s">&quot;Will Domination&quot;</span><span class="p">,</span><span class="s">&quot;Telekinetic Blast&quot;</span><span class="p">,</span><span class="s">&quot;Subdue&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Scramble Thoughts&quot;</span><span class="p">,</span><span class="s">&quot;Psionic Lance&quot;</span><span class="p">,</span><span class="s">&quot;Mental Blast&quot;</span><span class="p">,</span><span class="s">&quot;Transfusion&quot;</span><span class="p">,</span>
                                     <span class="s">&quot;Transference&quot;</span><span class="p">,</span><span class="s">&quot;Soothe&quot;</span><span class="p">,</span><span class="s">&quot;Share Pain&quot;</span><span class="p">,</span><span class="s">&quot;Force Bolt&quot;</span><span class="p">,</span><span class="s">&quot;Green Insp&quot;</span><span class="p">,</span>
-                                    <span class="s">&quot;Aim&quot;</span><span class="p">,</span><span class="s">&quot;Cosmic Burst&quot;</span><span class="p">,</span><span class="s">&quot;Proton Volley&quot;</span><span class="p">,</span><span class="s">&quot;X-Ray Beam&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">))</span>
+                                    <span class="s">&quot;Aim&quot;</span><span class="p">,</span><span class="s">&quot;Cosmic Burst&quot;</span><span class="p">,</span><span class="s">&quot;Proton Volley&quot;</span><span class="p">,</span><span class="s">&quot;X-Ray Beam&quot;</span><span class="p">,</span><span class="s">&quot;Burst of Speed&quot;</span><span class="p">,</span>
+                                    <span class="s">&quot;Dim Shift&quot;</span><span class="p">,</span><span class="s">&quot;Aid Self&quot;</span><span class="p">))</span>
 </pre></div>
 
     </div>

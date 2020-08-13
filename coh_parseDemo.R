@@ -40,10 +40,10 @@ parseDemo <- function(x,
                                     "Cosmic Burst","Proton Volley","X-Ray Beam"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                   "Rejuvenating Circuit", "Soothe", "Share Pain"),
-                      evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed"), ## add Dim Shift?
+                      evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed","Dim Shift"),
                       otherset = c("Crey Pistol","Net Arrow","Weaken","Confuse or Deceive","Regrowth",
                                    "Shock","Transfusion","Transference",
-                                   "Siphon Speed"),
+                                   "Siphon Speed","Inferno","Aid Self"),
                       buffset = c("Empowering Circuit",
                                    "Energizing Circuit","Amp Up","Healing Aura","Fort or AB","Clear Mind",
                                    "Speed Boost","Increase Density","Inertial Reduction",
@@ -91,7 +91,7 @@ parseDemo <- function(x,
                                    "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX",
                                    "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX","FORCEBOLT.FX","/STAMINA.FX",
                                    "RADIATIONBLASTAIM.FX","COSMICBLAST.FX","PROTONBLAST_QUICK.FX",
-                                   "XRAYBEAM.FX","BURSTOFSPEED.FX"),
+                                   "XRAYBEAM.FX","BURSTOFSPEED.FX","GCDIMENSIONSHIFT.FX","AIDSELF_ATTACK.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Super Jump", "Geas", "Burst of Speed","Blaze",
@@ -115,7 +115,8 @@ parseDemo <- function(x,
                                     "Inertial Reduction","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Transfusion",
                                     "Transference","Soothe","Share Pain","Force Bolt","Green Insp",
-                                    "Aim","Cosmic Burst","Proton Volley","X-Ray Beam","Burst of Speed")){
+                                    "Aim","Cosmic Burst","Proton Volley","X-Ray Beam","Burst of Speed",
+                                    "Dim Shift","Aid Self")){
   
   ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
@@ -344,10 +345,33 @@ parseDemo <- function(x,
   }else if (smartStart){
     mydataDF$timesec <- mydataDF$timesec - firstJump + 1
     mydataDF$time <- mydataDF$time - firstJumpT + 1/60
-    mydataDF <- mydataDF[which(mydataDF$timesec >= 0),]
     firstJump <- 0
     firstJumpT <- 0
   }
+  
+  if (emotePolice){
+    emoteRows <- which(grepl("EMOTE",mydataDF$string))
+    if (length(emoteRows)>0){
+      emoteUsage <- mydataDF[emoteRows,c("name","team","time","string")]
+      emoteUsage$notes <- NA
+      emoteUsage[which(grepl("EMOTE_HOLD_TORCH",emoteUsage$string)
+                       & emoteUsage$time < 0.6),"notes"] <- "Probably just Silent at the start"
+      emoteUsage[which(grepl("EMOTE_MALE_LOOKING_DOWN",emoteUsage$string)),"notes"] <- "ANIM CANCEL - em shocked"
+      emoteUsage[which(grepl("EMOTE_FEM_BEING_HELD",emoteUsage$string)),"notes"] <- "ANIM CANCEL - em liedown"
+    }else{
+      emoteUsage <- "No emote usage"
+    }
+    if (class(emoteUsage) != "character"){
+      if (length(which(grepl("ANIM CANCEL",emoteUsage$notes)))>0){
+        warning("At least one animation canceling emote was used. Inspect emoteUsage output")
+      }
+      if (length(which(is.na(emoteUsage$notes)))>0){
+        warning("Unclassified emotes were used. Not necessarily animation canceling, but inspect emoteUsage output")
+      }
+    }
+  }
+  
+  mydataDF <- mydataDF[which(mydataDF$timesec >= 0),]
   
   if (smartEnd){
     ## When smartEnd is used, it stops recording 10 minutes + 1 second after the first jump occurs, regardless of whether
@@ -506,29 +530,6 @@ parseDemo <- function(x,
   
   greenUsage <- mydataDF[which(grepl(textset[which(powerset=="Green Insp")],mydataDF$string)),
                                c("entity","string","time","timesec","team","name")]
-  
-  if (emotePolice){
-    emoteRows <- which(grepl("EMOTE",mydataDF$string))
-    if (length(emoteRows)>0){
-      emoteUsage <- mydataDF[emoteRows,c("name","time","string")]
-      emoteUsage$notes <- NA
-      emoteUsage[which(grepl("EMOTE_HOLD_TORCH",emoteUsage$string)),"notes"] <- "Probably just Silent at the start"
-      emoteUsage[which(grepl("EMOTE_MALE_LOOKING_DOWN",emoteUsage$string)),"notes"] <- "ANIM CANCEL - em shocked"
-      emoteUsage[which(grepl("EMOTE_FEM_BEING_HELD",emoteUsage$string)),"notes"] <- "ANIM CANCEL - em liedown"
-    }else{
-      emoteUsage <- "No emote usage"
-    }
-    if (class(emoteUsage) != "character"){
-      if (length(which(grepl("ANIM CANCEL",emoteUsage$notes)))>0){
-        warning("At least one animation canceling emote was used. Inspect emoteUsage output")
-      }
-      if (length(which(is.na(emoteUsage$notes)))>0){
-        warning("Unclassified emotes were used. Not necessarily animation canceling, but inspect emoteUsage output")
-      }
-    }
-  }
-  
-  
   
   ## Grab .FX data which forms the basis for most of the rest of the analysis
   fxteam0 <- mydataDF[which((grepl("FX OneShot", mydataDF$string) |
