@@ -430,6 +430,7 @@ parseDemo <- function(x,
     thisWindowMin<-thisTime - 5
     thisWindowMax<-thisTime + 5
     thisDeath<-deaths[which(deaths$name==thisName),]
+    found_indicator <- FALSE
     if (nrow(thisDeath)>0){
       found_indicator <- length(which(thisDeath$timesec > thisWindowMin & thisDeath$timesec < thisWindowMax)) > 0
     }
