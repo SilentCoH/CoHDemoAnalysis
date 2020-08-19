@@ -54,7 +54,7 @@ parseDemo <- function(x,
                       smartStart=TRUE, smartEnd=TRUE, customStart=NULL, customEnd=NULL, checkEntities=TRUE,
                       suppsTeam0=2, suppsTeam1=2,
                       expectedPlayers=16,
-                      emotePolice=TRUE,
+                      emotePolice=TRUE,returnRawDF=FALSE,
                       textset = c("FIREBALL.FX", "SOOT.FX", "INFERNOBOLT.FX",
                                    "FIREBLASTAIM.FX", "FIREBOLT.FX", "FLARES.FX","XXLARGEFIREBALL.FX", "INFERNO.FX",
                                    "INFERNO_ATTACK.FX","LEAPING.FX", "GEASTHEKINDONESCONTINUING.FX", "BURSTOFSPEED.FX",
@@ -84,14 +84,18 @@ parseDemo <- function(x,
                                    "HEROSTANDARDBLAST2.FX","MASSIVESONICBLAST.FX","HEADSONICSCREECH.FX",
                                    "SCREAMPBAOE.FX","ENERGYBLAST_BUILDUP_AIM.FX","POWERPUSH.FX","SNIPERBLAST_QUICK.FX",
                                    "THORNS/BUILDUP_ATTACK.FX","SSJ.FX","RADIATIONEMISSION.FX","ENDURANCEHANDS.FX",
-                                   "STRENGTHHANDS2.FX","ENDURANCEHANDS.FX","NONCOMBATFLIGHT_NOFX.FX","/ARROW_NET.FX",
+                                   "STRENGTHHANDS2.FX","NONCOMBATFLIGHT_NOFX.FX","/ARROW_NET.FX",
                                    "KINSIPHONSPEED.FX","KINSPEEDBOOST.FX","KININCREASEDENSITY.FX",
                                    "KININERTIALREDUCTIONS.FX","WILLDOMINATION.FX","TELEKINETICBLAST.FX",
                                    "SUBDUEPSIONICBLAST.FX","PSIBLAST_SLOWERCAST.FX","PSIONICLANCEBLASTQUICK.FX",
                                    "PSIONICBLAST_SLOWCAST.FX","KINTRANSFUSION.FX","KINTRANSFERENCE.FX",
                                    "SOOTH_ATTACK.FX","SHAREPAIN_ATTACK.FX","FORCEBOLT.FX","/STAMINA.FX",
                                    "RADIATIONBLASTAIM.FX","COSMICBLAST.FX","PROTONBLAST_QUICK.FX",
-                                   "XRAYBEAM.FX","BURSTOFSPEED.FX","GCDIMENSIONSHIFT.FX","AIDSELF_ATTACK.FX"),
+                                   "XRAYBEAM.FX","BURSTOFSPEED.FX","GCDIMENSIONSHIFT.FX","AIDSELF_ATTACK.FX",
+                                   "AIM_ACTIVATION.FX","WILDBASTION.FX","OVERGROWTH.FX","WILD_GROWTH.FX",
+                                   "CHILLINGHANDS.FX","GCCRUSH_SINGULARITY.FX","GCLIFT.FX","GCDISTORTION.FX",
+                                   "GCCRUSHINGFIELD.FX","GCDISTORTIONFIELD.FX","GCWORMHOLE.FX",
+                                   "ADRENALINEFLOW.FX","EMPATHYCUREWOUNDS.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Inferno","Super Jump", "Geas", "Burst of Speed",
@@ -110,13 +114,15 @@ parseDemo <- function(x,
                                     "Rejuvenating Circuit","Empowering Circuit","Amp Up","Galvanic Sentinel",
                                     "Energizing Circuit","Shock","Defibrillate","Shriek","Scream","Shout","Screech",
                                     "Dreadful Wail","Aim","Power Push","Energy Snipe","Toxins","Spirit Shark Jaws",
-                                    "Healing Aura","Fort or AB","Clear Mind","Fort or AB","Raptor or Fly",
+                                    "Healing Aura","Fort or AB","Clear Mind","Raptor or Fly",
                                     "Net Arrow","Siphon Speed","Speed Boost","Increase Density",
                                     "Inertial Reduction","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Transfusion",
                                     "Transference","Soothe","Share Pain","Force Bolt","Green Insp",
                                     "Aim","Cosmic Burst","Proton Volley","X-Ray Beam","Burst of Speed",
-                                    "Dim Shift","Aid Self")){
+                                    "Dim Shift","Aid Self","Aim","Wild Bastion","Overgrowth","Wild Growth",
+                                    "Ice Storm","Crush","Lift","Grav Distortion","Crushing Field",
+                                    "Grav Field or Singularity","Wormhole","Recovery Aura","Regen Aura")){
   
   ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
@@ -133,8 +139,15 @@ parseDemo <- function(x,
     warning("suppsTeam0 and suppsTeam1 only function up to a value of 3 (for now); more supports will not be counted")
   }
   
-  mydataDF <- read.delim(paste0(x,".cohdemo"),sep="\r",
-                         stringsAsFactors=FALSE,	na.strings="")
+  warnTrigger<-FALSE
+  mydataDF <- tryCatch(read.delim(paste0(x,".cohdemo"),sep="\r",
+                         stringsAsFactors=FALSE,	na.strings=""), warning = function(w) w)
+  if ("warning" %in% class(mydataDF)){
+    mydataDF <- read.delim(paste0(x,".cohdemo"),sep="\r", quote="",
+                           stringsAsFactors=FALSE,	na.strings="")
+    warning("Unusual quote error while reading demo. Quote detection has been turned off. Output should still be fine (hopefully)")
+    warnTrigger<-TRUE
+  }
   names(mydataDF)[1] <- "string"
   mydata <- as.character(mydataDF[,1])
   mydataDF$timeIncr <- as.numeric(substr(mydata,1,4))
@@ -296,7 +309,11 @@ parseDemo <- function(x,
   entities <- entities[order(entities$team),]
   
   if (checkEntities){
-    print(entities[,c("name","team")])
+    tempent <- entities[,c("name","team")]
+    if (warnTrigger){
+      tempent$name <- gsub("\"","",tempent$name)
+    }
+    print(tempent)
     response1 <- readline("Does this team list look correct? Y or blank response = Yes, N = No (will enter correction mode): ")
     if (!toupper(response1) %in% c("Y","N","")) { stop("Unexpected response. Must be Y or N") }
     if (toupper(response1)=="N"){
@@ -349,6 +366,7 @@ parseDemo <- function(x,
     firstJumpT <- 0
   }
   
+  emoteUsage <- "Emote detection disabled"
   if (emotePolice){
     emoteRows <- which(grepl("EMOTE",mydataDF$string))
     if (length(emoteRows)>0){
@@ -427,8 +445,8 @@ parseDemo <- function(x,
   for (i in 1:nrow(deaths2)){
     thisName<-deaths2[i,"name"]
     thisTime<-deaths2[i,"timesec"]
-    thisWindowMin<-thisTime - 5
-    thisWindowMax<-thisTime + 5
+    thisWindowMin<-thisTime - 7.5
+    thisWindowMax<-thisTime + 7.5
     thisDeath<-deaths[which(deaths$name==thisName),]
     found_indicator <- FALSE
     if (nrow(thisDeath)>0){
@@ -503,7 +521,11 @@ parseDemo <- function(x,
   oneshot<-which(grepl("FX OneShot",s2$string))
   
   ## This isn't written very efficiently, but it'll suffice given that demos are typically not that large
+  deciles <- round(quantile(1:length(oneshot), seq(from=0,to=1,by=.1)))
   for (i in 1:length(oneshot)){
+    if (i %in% deciles){
+      message(paste0("FX parse portion is ",names(deciles[which(deciles==i)])," complete"))
+    }
     theseRows<-s2[c(oneshot[i],oneshot[i]+1,oneshot[i]+2,oneshot[i]+3,oneshot[i]+4,oneshot[i]+5),]
     thisOneShot<-which(grepl("FX OneShot",theseRows$string))[-1]
     if (length(thisOneShot)>0){
@@ -551,6 +573,12 @@ parseDemo <- function(x,
   
   fxteam1$power <- regmatches(fxteam1$string,
                               regexpr("/\\w+\\.FX",fxteam1$string))
+  
+  ## Toxins can only actually be differentiated from Build Up via the prefix
+  fxteam0[which(grepl(textset[which(powerset=="Toxins")],
+                      fxteam0$string)),"power"] <- textset[which(powerset=="Toxins")]
+  fxteam1[which(grepl(textset[which(powerset=="Toxins")],
+                      fxteam1$string)),"power"] <- textset[which(powerset=="Toxins")]
   
   
   fxteam0$power2 <- NA
@@ -1122,7 +1150,46 @@ parseDemo <- function(x,
   spikeComparison[6,2:3]<-c(mean(s0good$spikeSummary$avg_timing_distance,na.rm=TRUE),
                             mean(s1good$spikeSummary$avg_timing_distance,na.rm=TRUE))
   spikeComparison <- list(map = map, runtime = runtime, spikeComparison = spikeComparison)
+  rawDF <- NULL
+  if (returnRawDF){
+    rawDF <- rbind(fxteam0,fxteam1)
+    if (warnTrigger){
+      rawDF$name <- gsub("\"","",rawDF$name)
+      rawDF$targName <- gsub("\"","",rawDF$targName)
+    }
+  }
   
+  if (warnTrigger){
+    ## If quote detection had to be turned off, the main thing that is affected should be player names, so gsub
+    ## any double quotes out of the player names before returning any data.
+    summ0$Name <- gsub("\"","",summ0$Name)
+    summ1$Name <- gsub("\"","",summ1$Name)
+    s0good$spikeSummary$target <- gsub("\"","",s0good$spikeSummary$target)
+    s1good$spikeSummary$target <- gsub("\"","",s1good$spikeSummary$target)
+    for (i in 1:length(s0good$spikeDetails)){
+      s0good$spikeDetails[[i]]$name <- gsub("\"","",s0good$spikeDetails[[i]]$name)
+      s0good$spikeDetails[[i]]$target <- gsub("\"","",s0good$spikeDetails[[i]]$target)
+    }
+    for (i in 1:length(s1good$spikeDetails)){
+      s1good$spikeDetails[[i]]$name <- gsub("\"","",s1good$spikeDetails[[i]]$name)
+      s1good$spikeDetails[[i]]$target <- gsub("\"","",s1good$spikeDetails[[i]]$target)
+    }
+    for (i in 1:length(s0good$healDetails)){
+      s0good$healDetails[[i]]$name <- gsub("\"","",s0good$healDetails[[i]]$name)
+      s0good$healDetails[[i]]$target <- gsub("\"","",s0good$healDetails[[i]]$target)
+    }
+    for (i in 1:length(s1good$healDetails)){
+      s1good$healDetails[[i]]$name <- gsub("\"","",s1good$healDetails[[i]]$name)
+      s1good$healDetails[[i]]$target <- gsub("\"","",s1good$healDetails[[i]]$target)
+    }
+    ent_0$name <- gsub("\"","",ent_0$name)
+    ent_1$name <- gsub("\"","",ent_1$name)
+    greenUsage$name <- gsub("\"","",greenUsage$name)
+    deaths$name <- gsub("\"","",deaths$name)
+    if (class(emoteUsage) != "character"){
+      emoteUsage$name <- gsub("\"","",emoteUsage$name)
+    }
+  }
   
   return(list(powerSummary0 = summ0,
               powerSummary1 = summ1,
@@ -1136,6 +1203,8 @@ parseDemo <- function(x,
               entities0 = ent_0,
               entities1 = ent_1,
               greenUsage = greenUsage[order(greenUsage$team,greenUsage$timesec),c("entity","name","team","time","timesec")],
+              deathTable = deaths[order(deaths$team,deaths$timesec),c("entity","name","team","time","timesec")],
+              rawDF = rawDF,
               emoteUsage = emoteUsage))
 }
 
