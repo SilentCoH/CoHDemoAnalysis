@@ -1044,6 +1044,8 @@ parseDemo <- function(x,
         if (length(timelyHeal)>0){
           datOut[i,"healed"]<-1
         }
+      }else{
+        timelyHealDat <- as.data.frame(matrix(NA,nrow=1,ncol=2))[-1,]
       }
       
       for (j in 1:nrow(healDat)){
