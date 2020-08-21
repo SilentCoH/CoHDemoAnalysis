@@ -6,14 +6,13 @@
 ## - technically a particular evasion or a particular heal could be counted for TWO spikes if there is a back-to-back "recall" spike
 ##     and the heal or evasion occurs near the boundary of those two spikes
 ## - there's probably no reliable way to give someone credit for a pre-evasion that results in the enemy firing 0 attacks (likely not fixable)
-## - entity detection usually does not work for smaller maps or for spectator demos. "checkEntities" is a way for users to fix this
 ## - this code is missing any ability that I haven't programmed into it, which is a long list. Fixable by adding more FX
 ## - extended / dirty recall spikes (e.g. target getting hit for a long period of time) will be split up into multiple spikes (as intended),
 ##     but the target might not get credit for an evasion if their response to the latter portion of the spike is simply to continue
 ##     moving / breaking LOS rather than using jaunt/fly/phase/hibernate
-## - no way to track green inspiration usage which is an important part of defense (would be floatdmg based i.e. not reliable. Not fixable)
 ## - no guarantee that other powers (not yet added to my lists) don't use MOV Wall 0 which is what I use to detect SSJ. For example,
 ##     Block of Ice from Ice Control might use the same thing, so care would need to be taken to deduplicate MOV Wall 0's from Block of Ice.
+## - Masterminds aren't counted as "on spike" simply by having pets target players... they only end up on spike by using their abilities.
 
 ## Also, a major to do item is that graphics could be generated in ggplot2, particularly for things like count of spikes over time,
 ##     match score over time, number of players on spike over time, etc. I've been too lazy to create these, but it wouldn't be difficult.
@@ -37,20 +36,21 @@ parseDemo <- function(x,
                                     "Mesmerize","Zapp", "Spirit Shark Jaws","Shriek","Scream","Shout","Screech",
                                     "Power Push","Energy Snipe","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Force Bolt",
-                                    "Cosmic Burst","Proton Volley","X-Ray Beam"),
+                                    "Cosmic Burst","Proton Volley","X-Ray Beam", "Melt Armor", "Gravity Distortion",
+                                    "Lift","Wormhole","Dark Blast","Gloom","Moonbeam","Life Drain"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
-                                  "Rejuvenating Circuit", "Soothe", "Share Pain"),
+                                  "Rejuvenating Circuit", "Soothe", "Share Pain", "Cauterize"),
                       evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed","Dim Shift"),
                       otherset = c("Crey Pistol","Net Arrow","Weaken","Confuse or Deceive","Regrowth",
                                    "Shock","Transfusion","Transference",
-                                   "Siphon Speed","Inferno","Aid Self"),
+                                   "Siphon Speed","Inferno","Aid Self","Heat Exhaustion","Blackstar"),
                       buffset = c("Empowering Circuit",
                                    "Energizing Circuit","Amp Up","Healing Aura","Fort or AB","Clear Mind",
                                    "Speed Boost","Increase Density","Inertial Reduction",
                                    "Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
-                                   "Rejuvenating Circuit","Soothe","Share Pain"),
+                                   "Rejuvenating Circuit","Soothe","Share Pain","Thaw or Forge","Cauterize"),
                       spikeWindow=3.5, min_attacks_per_spike=2, max_time_per_spike_sec=11, hitSupportCredit=TRUE,
-                      healWindow=2, preEvadeWindow=c(-2,1), greenMax=20,
+                      healWindow=2, preEvadeWindow=c(-1.5,1), greenMax=20,
                       smartStart=TRUE, smartEnd=TRUE, customStart=NULL, customEnd=NULL, checkEntities=TRUE,
                       suppsTeam0=2, suppsTeam1=2,
                       expectedPlayers=16,
@@ -95,7 +95,9 @@ parseDemo <- function(x,
                                    "AIM_ACTIVATION.FX","WILDBASTION.FX","OVERGROWTH.FX","WILD_GROWTH.FX",
                                    "CHILLINGHANDS.FX","GCCRUSH_SINGULARITY.FX","GCLIFT.FX","GCDISTORTION.FX",
                                    "GCCRUSHINGFIELD.FX","GCDISTORTIONFIELD.FX","GCWORMHOLE.FX",
-                                   "ADRENALINEFLOW.FX","EMPATHYCUREWOUNDS.FX"),
+                                   "ADRENALINEFLOW.FX","EMPATHYCUREWOUNDS.FX","PBAOE.FX","FIRESHIELDHANDS.FX",
+                                   "FIREHEALSELFWITHHANDS.FX","FIRESHIELDHANDSBOTH.FX","MELTARMORCAST.FX",
+                                   "DARKNESSBLAST2.FX","SOULDRAIN.FX","MOONBEAM_QUICK.FX","LIFEDRAIN.FX","BLACKSTAR.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Inferno","Super Jump", "Geas", "Burst of Speed",
@@ -122,7 +124,9 @@ parseDemo <- function(x,
                                     "Aim","Cosmic Burst","Proton Volley","X-Ray Beam","Burst of Speed",
                                     "Dim Shift","Aid Self","Aim","Wild Bastion","Overgrowth","Wild Growth",
                                     "Ice Storm","Crush","Lift","Grav Distortion","Crushing Field",
-                                    "Grav Field or Singularity","Wormhole","Recovery Aura","Regen Aura")){
+                                    "Grav Field or Singularity","Wormhole","Recovery Aura","Regen Aura",
+                                    "Warmth","Heat Exhaustion","Cauterize","Thaw or Forge","Melt Armor",
+                                    "Dark Blast","Gloom","Moonbeam","Life Drain","Blackstar")){
   
   ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
@@ -457,6 +461,25 @@ parseDemo <- function(x,
     }
   }
   
+  kbs <- mydataDF[which(!is.na(mydataDF$team) & grepl("PLAYERKNOCKBACK", mydataDF$string)),]
+  
+  if (nrow(kbs)>0){
+    kbs <- kbs[order(kbs$name, kbs$timesec),]
+    
+    keepKB <- 1 ## KB animations have several MOVs in succession with PLAYERKNOCKBACK; keep only the first, every 10 sec
+    if (nrow(kbs)>1){
+      for (i in 2:nrow(kbs)){
+        if (kbs[i,"name"]!=kbs[(i-1),"name"] | (kbs[i,"timesec"] - kbs[(i-1),"timesec"] >= 10)){
+          keepKB<-c(keepKB,i)
+        }
+      }
+    }
+    kbs <- kbs[keepKB,]
+  }else{
+    kbs <- "No player knockbacks"
+  }
+  
+  
   ## For some bizarre reason, SSJ doesn't have an .FX animation. Instead, it shows up as MOV Wall 0.
   ## Might as well just "convert" those values into my own fake .FX.
   
@@ -611,6 +634,11 @@ parseDemo <- function(x,
   
   fxteam0 <- codePowers(fxteam0, textset, powerset, attackset, healset, evadeset)
   fxteam1 <- codePowers(fxteam1, textset, powerset, attackset, healset, evadeset)
+  
+  ## Heat Exhaustion shares an .FX with one of the therm shields, but the therm shields aren't really worth tracking,
+  ## so simply set Heat Exhaustion detections to NA if they weren't used on an enemy player
+  fxteam0[which(fxteam0$power2=="Heat Exhaustion" & !fxteam0$target %in% entities[which(entities$team==1),"num"]),"power2"] <- NA
+  fxteam1[which(fxteam1$power2=="Heat Exhaustion" & !fxteam1$target %in% entities[which(entities$team==0),"num"]),"power2"] <- NA
   
   fxteam0good <- fxteam0[which(!is.na(fxteam0$power2)),c("name","time",
                                                          "timesec","team","power2","attack","heal","evade","target","targName")]
@@ -1149,6 +1177,7 @@ parseDemo <- function(x,
   spikeComparison[5,2:3]<-c(mean(s0good$spikeSummary$spike_duration),mean(s1good$spikeSummary$spike_duration))
   spikeComparison[6,2:3]<-c(mean(s0good$spikeSummary$avg_timing_distance,na.rm=TRUE),
                             mean(s1good$spikeSummary$avg_timing_distance,na.rm=TRUE))
+
   spikeComparison <- list(map = map, runtime = runtime, spikeComparison = spikeComparison)
   rawDF <- NULL
   if (returnRawDF){
@@ -1191,6 +1220,12 @@ parseDemo <- function(x,
     }
   }
   
+  if (class(kbs) != "character"){
+    knockbacks <- kbs[order(kbs$team,kbs$timesec),c("entity","name","team","time","timesec")]
+  }else{
+    knockbacks <- kbs
+  }
+  
   return(list(powerSummary0 = summ0,
               powerSummary1 = summ1,
               spikeSummary0 = s0good$spikeSummary,
@@ -1205,6 +1240,7 @@ parseDemo <- function(x,
               greenUsage = greenUsage[order(greenUsage$team,greenUsage$timesec),c("entity","name","team","time","timesec")],
               deathTable = deaths[order(deaths$team,deaths$timesec),c("entity","name","team","time","timesec")],
               rawDF = rawDF,
+              knockbacks = knockbacks,
               emoteUsage = emoteUsage))
 }
 
