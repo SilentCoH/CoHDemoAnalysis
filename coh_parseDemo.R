@@ -37,13 +37,15 @@ parseDemo <- function(x,
                                     "Power Push","Energy Snipe","Will Domination","Telekinetic Blast","Subdue",
                                     "Scramble Thoughts","Psionic Lance","Mental Blast","Force Bolt",
                                     "Cosmic Burst","Proton Volley","X-Ray Beam", "Melt Armor", "Gravity Distortion",
-                                    "Lift","Wormhole","Dark Blast","Gloom","Moonbeam","Life Drain"),
+                                    "Lift","Wormhole","Dark Blast","Gloom","Moonbeam","Life Drain","Knockout Blow",
+                                    "Electric Shackles","Suppressive Fire","Executioner Shot"),
                       healset = c("Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                   "Rejuvenating Circuit", "Soothe", "Share Pain", "Cauterize"),
                       evadeset = c("Phase Shift","Hibernate","Jaunt","Raptor or Fly","Burst of Speed","Dim Shift"),
                       otherset = c("Crey Pistol","Net Arrow","Weaken","Confuse or Deceive","Regrowth",
                                    "Shock","Transfusion","Transference",
-                                   "Siphon Speed","Inferno","Aid Self","Heat Exhaustion","Blackstar"),
+                                   "Siphon Speed","Inferno","Aid Self","Heat Exhaustion","Blackstar",
+                                   "Embrace of Fire","Domination","Entangle","Web Grenade"),
                       buffset = c("Empowering Circuit",
                                    "Energizing Circuit","Amp Up","Healing Aura","Fort or AB","Clear Mind",
                                    "Speed Boost","Increase Density","Inertial Reduction",
@@ -53,7 +55,7 @@ parseDemo <- function(x,
                       healWindow=2, preEvadeWindow=c(-1.5,1), greenMax=20,
                       smartStart=TRUE, smartEnd=TRUE, customStart=NULL, customEnd=NULL, checkEntities=TRUE,
                       suppsTeam0=2, suppsTeam1=2,
-                      expectedPlayers=16,
+                      expectedPlayers=16,dropNPCentity=FALSE,
                       emotePolice=TRUE,returnRawDF=FALSE,
                       textset = c("FIREBALL.FX", "SOOT.FX", "INFERNOBOLT.FX",
                                    "FIREBLASTAIM.FX", "FIREBOLT.FX", "FLARES.FX","XXLARGEFIREBALL.FX", "INFERNO.FX",
@@ -97,7 +99,10 @@ parseDemo <- function(x,
                                    "GCCRUSHINGFIELD.FX","GCDISTORTIONFIELD.FX","GCWORMHOLE.FX",
                                    "ADRENALINEFLOW.FX","EMPATHYCUREWOUNDS.FX","PBAOE.FX","FIRESHIELDHANDS.FX",
                                    "FIREHEALSELFWITHHANDS.FX","FIRESHIELDHANDSBOTH.FX","MELTARMORCAST.FX",
-                                   "DARKNESSBLAST2.FX","SOULDRAIN.FX","MOONBEAM_QUICK.FX","LIFEDRAIN.FX","BLACKSTAR.FX"),
+                                   "DARKNESSBLAST2.FX","SOULDRAIN.FX","MOONBEAM_QUICK.FX","LIFEDRAIN.FX","BLACKSTAR.FX",
+                                   "FOLLOWUPHIT4.FX","DOMINATIONACTIVATION.FX","STRENGTHSTREAKSKO.FX",
+                                   "REDMU_CAGEBOLTS.FX","SUPPRESSIVEFIRE_ATTACK.FX","EXECUTIONERSSHOT_ATTACK.FX",
+                                   "ENTANGLEPLANTSEEDTHROW.FX","WEBGRENADETHROW.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Inferno","Super Jump", "Geas", "Burst of Speed",
@@ -126,7 +131,9 @@ parseDemo <- function(x,
                                     "Ice Storm","Crush","Lift","Grav Distortion","Crushing Field",
                                     "Grav Field or Singularity","Wormhole","Recovery Aura","Regen Aura",
                                     "Warmth","Heat Exhaustion","Cauterize","Thaw or Forge","Melt Armor",
-                                    "Dark Blast","Gloom","Moonbeam","Life Drain","Blackstar")){
+                                    "Dark Blast","Gloom","Moonbeam","Life Drain","Blackstar",
+                                    "Embrace of Fire","Domination","Knockout Blow","Electric Shackles",
+                                    "Suppressive Fire","Executioner Shot","Entangle","Web Grenade")){
   
   ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
@@ -182,12 +189,19 @@ parseDemo <- function(x,
   ## This excludes cameras (spectators) and also probably eliminates the need for exclNames altogether, unless
   ## a player drops from the match early and does not rack up a ton of FX OneShots.
   mostOneShots <- table(mydataDF[which(grepl("FX OneShot",mydataDF$string)),"entity"])
-  playerNums <- as.numeric(names(sort(mostOneShots,decreasing=T)))[1:expectedPlayers]
+  npcnums <- as.numeric(gsub("0   (\\d\\d*[\\d \\s]*) NPC ", "\\1",
+                             regmatches(mydataDF$string,regexpr("0   (\\d\\d*[\\d \\s]*) NPC ",mydataDF$string))))
+  playerNums <- as.numeric(names(sort(mostOneShots,decreasing=T)))
+  if (dropNPCentity){
+    playerNums <- playerNums[which(!playerNums %in% c(npcnums))][1:expectedPlayers]
+  }else{
+    playerNums <- playerNums[1:expectedPlayers]
+  }
   
   ent_str <- gsub("0   ","",unique(mydata[which(grepl("NEW",mydata))]))
-  ent_temp <- unlist(strsplit(ent_str,"NEW "))
+  ent_temp <- unlist(strsplit(ent_str,"NEW"))
   ent_nums <- as.numeric(ent_temp[seq(from=1,to=length(ent_temp),by=2)])
-  ent_names <- ent_temp[seq(from=2,to=length(ent_temp),by=2)]
+  ent_names <- trimws(ent_temp[seq(from=2,to=length(ent_temp),by=2)])
   entities <- unique(data.frame(num = ent_nums, name = ent_names))
   entities$name <- as.character(entities$name)
   entities <- entities[which(!duplicated(entities$num)),] ## for rare situations when a player drops and entity is reassigned
@@ -498,7 +512,7 @@ parseDemo <- function(x,
   ## There is a way to tell if it landed, but this is different from how all other powers are accounted,
   ## which is at the time of firing (i.e. regardless of whether they hit/miss, whether target is dead/phased...).
   ## Unfortunately this is the only way to count it: find PLANTCONTROLHIT.FX's, and see who the TARGET or PREVTARGET
-  ## is from the subsequent lines.
+  ## is from the subsequent lines. However, Entangle usages need to be removed.
   
   stranglerhits<-which(grepl("PLANTCONTROLHIT.FX",mydataDF$string) & !is.na(mydataDF$team))
   ## Get the next several rows of data, too:
@@ -512,6 +526,23 @@ parseDemo <- function(x,
   }
   s1targ$attacker <- as.numeric(attackerPre)
   s1targ$target <- NA
+  
+  entangRows<-c()
+  for (i in 1:nrow(s1targ)){
+    thisAttacker <- s1targ[i,"attacker"]
+    thisTime <- s1targ[i,"timesec"]
+    atkEnt <- mydataDF[which(mydataDF$entity==thisAttacker & grepl(textset[which(powerset=="Entangle")],mydataDF$string)),]
+    if (nrow(atkEnt)>0){
+      atkEntTimeDiff <- atkEnt$timesec - thisTime
+      if (length(which(atkEntTimeDiff > -0.5 & atkEntTimeDiff <= 1.3))>0){
+        entangRows<-c(entangRows,i)
+      }
+    }
+  }
+  
+  if (length(entangRows)>0){
+    s1targ <- s1targ[-entangRows,]
+  }
   
   for (i in 1:nrow(s1targ)){
     enttemp<-s1targ[i,"entity"]
@@ -851,17 +882,19 @@ parseDemo <- function(x,
     
     toBeRemoved <- which(x$prelim_atks < min_attacks_per_spike)
     
-    tbr <- x[toBeRemoved,]
-    x <- x[-toBeRemoved,]
-    for (i in 1:nrow(tbr)){
-      if (!is.na(tbr[i,"targName"])){ ## the attack is just a lost cause if it's a stray w/ no target
-        thisTime<-tbr[i,"timesec"]
-        thisTarget<-tbr[i,"targName"]
-        thisEvadeTime<-enemyEvade[which(enemyEvade$name==thisTarget),"timesec"]
-        if (length(thisEvadeTime)>0){
-          preEvade <- which(thisEvadeTime - thisTime > min(preEvadeWindow) & thisEvadeTime - thisTime < max(preEvadeWindow))
-          if (length(preEvade)>0){
-            x<-rbind(x,tbr[i,])
+    if (length(toBeRemoved)>0){
+      tbr <- x[toBeRemoved,]
+      x <- x[-toBeRemoved,]
+      for (i in 1:nrow(tbr)){
+        if (!is.na(tbr[i,"targName"])){ ## the attack is just a lost cause if it's a stray w/ no target
+          thisTime<-tbr[i,"timesec"]
+          thisTarget<-tbr[i,"targName"]
+          thisEvadeTime<-enemyEvade[which(enemyEvade$name==thisTarget),"timesec"]
+          if (length(thisEvadeTime)>0){
+            preEvade <- which(thisEvadeTime - thisTime > min(preEvadeWindow) & thisEvadeTime - thisTime < max(preEvadeWindow))
+            if (length(preEvade)>0){
+              x<-rbind(x,tbr[i,])
+            }
           }
         }
       }
