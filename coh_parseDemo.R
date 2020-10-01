@@ -51,8 +51,8 @@ parseDemo <- function(x,
                                    "Speed Boost","Increase Density","Inertial Reduction",
                                    "Absorb Pain","Heal Other","Aid Other","Spirit Ward","Insulating Circuit",
                                    "Rejuvenating Circuit","Soothe","Share Pain","Thaw or Forge","Cauterize"),
-                      spikeWindow=3.5, min_attacks_per_spike=2, max_time_per_spike_sec=11, hitSupportCredit=TRUE,
-                      healWindow=2, preEvadeWindow=c(-1.5,1), greenMax=20,
+                      spikeWindow=3.7, min_attacks_per_spike=2, max_time_per_spike_sec=11, hitSupportCredit=TRUE,
+                      healWindow=2, preEvadeWindow=c(-1,1), greenMax=20, removeFlyEvasion=TRUE,
                       smartStart=TRUE, smartEnd=TRUE, customStart=NULL, customEnd=NULL, checkEntities=TRUE,
                       suppsTeam0=2, suppsTeam1=2,
                       expectedPlayers=16,dropNPCentity=FALSE,
@@ -662,9 +662,13 @@ parseDemo <- function(x,
     return(x[order(x$name,x$time),])
   }
   
-  
-  fxteam0 <- codePowers(fxteam0, textset, powerset, attackset, healset, evadeset)
-  fxteam1 <- codePowers(fxteam1, textset, powerset, attackset, healset, evadeset)
+  if (removeFlyEvasion){
+    fxteam0 <- codePowers(fxteam0, textset, powerset, attackset, healset, evadeset[which(evadeset != "Raptor or Fly")])
+    fxteam1 <- codePowers(fxteam1, textset, powerset, attackset, healset, evadeset[which(evadeset != "Raptor or Fly")])
+  }else{
+    fxteam0 <- codePowers(fxteam0, textset, powerset, attackset, healset, evadeset)
+    fxteam1 <- codePowers(fxteam1, textset, powerset, attackset, healset, evadeset)
+  }
   
   ## Heat Exhaustion shares an .FX with one of the therm shields, but the therm shields aren't really worth tracking,
   ## so simply set Heat Exhaustion detections to NA if they weren't used on an enemy player
