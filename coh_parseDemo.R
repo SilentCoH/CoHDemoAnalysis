@@ -102,7 +102,7 @@ parseDemo <- function(x,
                                    "DARKNESSBLAST2.FX","SOULDRAIN.FX","MOONBEAM_QUICK.FX","LIFEDRAIN.FX","BLACKSTAR.FX",
                                    "FOLLOWUPHIT4.FX","DOMINATIONACTIVATION.FX","STRENGTHSTREAKSKO.FX",
                                    "REDMU_CAGEBOLTS.FX","SUPPRESSIVEFIRE_ATTACK.FX","EXECUTIONERSSHOT_ATTACK.FX",
-                                   "ENTANGLEPLANTSEEDTHROW.FX","WEBGRENADETHROW.FX"),
+                                   "ENTANGLEPLANTSEEDTHROW.FX","WEBGRENADETHROW.FX","TOTALFOCUSPOWERPUNCH.FX"),
                       
                       powerset = c("Blaze", "Char", "Blazing Bolt", "Aim", "Fire Blast",
                                     "Flares", "Fire Ball", "Inferno", "Inferno","Super Jump", "Geas", "Burst of Speed",
@@ -133,7 +133,7 @@ parseDemo <- function(x,
                                     "Warmth","Heat Exhaustion","Cauterize","Thaw or Forge","Melt Armor",
                                     "Dark Blast","Gloom","Moonbeam","Life Drain","Blackstar",
                                     "Embrace of Fire","Domination","Knockout Blow","Electric Shackles",
-                                    "Suppressive Fire","Executioner Shot","Entangle","Web Grenade")){
+                                    "Suppressive Fire","Executioner Shot","Entangle","Web Grenade","Total Focus")){
   
   ## General note: a few times in this code I get lazy by assuming player entities will be < 1000
   ## instead of just using regex. Using this code outside of arena matches, or in crowded arena
