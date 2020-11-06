@@ -170,7 +170,6 @@ parseDemo <- function(x,
   mydata <- mydata[1:(length(mydata)-1)] # drop footer row
   
   map <- "Map not added to code yet!"
-  
   if (any(grepl("/Arena_Skyway_01.txt",mydataDF$string))) { map <- "Skyway City" }
   else if (any(grepl("/Arena_steel_01.txt",mydataDF$string))) { map <- "Steel Canyon" }
   else if (any(grepl("/Arena_OutbreakRuin_01.txt",mydataDF$string))) { map <- "Outbreak" }
